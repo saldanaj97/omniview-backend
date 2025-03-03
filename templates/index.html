@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Twitch Auth Sample</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+      }
+      th {
+        background-color: #f2f2f2;
+      }
+    </style>
+  </head>
+  <body>
+    {% if user %}
+    <h1>Authentication Successful</h1>
+    <table>
+      <tr>
+        <th>Access Token</th>
+        <td>{{ user.access_token }}</td>
+      </tr>
+      <tr>
+        <th>Refresh Token</th>
+        <td>{{ user.refresh_token }}</td>
+      </tr>
+      <tr>
+        <th>Display Name</th>
+        <td>{{ user.display_name }}</td>
+      </tr>
+      <tr>
+        <th>Email</th>
+        <td>{{ user.email }}</td>
+      </tr>
+      <tr>
+        <th>User ID</th>
+        <td>{{ user.id }}</td>
+      </tr>
+      {% if user.profile_image_url %}
+      <tr>
+        <th>Image</th>
+        <td><img src="{{ user.profile_image_url }}" alt="Profile Image" width="100" /></td>
+      </tr>
+      {% endif %}
+    </table>
+    {% else %}
+    <h1>Twitch Authentication</h1>
+    <a href="/auth/twitch">
+      <img src="https://static-cdn.jtvnw.net/connects/image/Twitch-Connect-Button.png" alt="Connect with Twitch" />
+    </a>
+    {% endif %}
+  </body>
+</html>
