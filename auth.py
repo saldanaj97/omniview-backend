@@ -8,6 +8,12 @@ import config
 
 def get_authorization_url(state=None):
     """Generate the Twitch authorization URL."""
+    # Space delimiter for scopes
+    for scope in config.TWITCH_SCOPES:
+        scope = scope.replace(":", "%20")
+
+    print(scope)
+
     params = {
         "client_id": config.TWITCH_CLIENT_ID,
         "redirect_uri": config.CALLBACK_URL,
@@ -38,22 +44,3 @@ async def get_oauth_token(code):
         raise HTTPException(status_code=400, detail="Failed to retrieve access token")
 
     return response.json()
-
-
-async def get_user_profile(access_token):
-    """Retrieve user profile from Twitch API."""
-    headers = {
-        "Client-ID": config.TWITCH_CLIENT_ID,
-        "Authorization": f"Bearer {access_token}",
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(
-            "https://api.twitch.tv/helix/users", headers=headers
-        )
-
-    if response.status_code != 200:
-        raise HTTPException(status_code=400, detail="Failed to retrieve user profile")
-
-    data = response.json()
-    return data.get("data", [{}])[0] if data.get("data") else {}

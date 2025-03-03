@@ -10,6 +10,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 import auth
 import config
+import user
 
 # Create FastAPI app
 app = FastAPI()
@@ -60,7 +61,7 @@ async def twitch_callback(
     refresh_token = token_data.get("refresh_token")
 
     # Get user profile
-    user_profile = await auth.get_user_profile(access_token)
+    user_profile = await user.get_user_profile(access_token)
 
     # Store tokens and profile in session
     user_data = {
@@ -73,6 +74,18 @@ async def twitch_callback(
 
     # Redirect to home page
     return RedirectResponse(url="/")
+
+
+@app.get("/user/following")
+async def get_following(request: Request):
+    logged_in_user = request.session.get("user")
+    if not logged_in_user:
+        return RedirectResponse(url="/")
+
+    following_data = await user.get_user_follows(
+        access_token=logged_in_user["access_token"], user_id=logged_in_user["id"]
+    )
+    return {"following": following_data}
 
 
 # Logout route

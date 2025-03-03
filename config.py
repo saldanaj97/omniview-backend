@@ -11,5 +11,4 @@ CALLBACK_URL = os.getenv("CALLBACK_URL", "http://localhost:8000/auth/twitch/call
 SECRET_KEY = os.getenv("SECRET_KEY")
 
 # API scopes to request
-TWITCH_SCOPES = "user:read:email"
-TWITCH_SCOPES = "user:read:email"
+TWITCH_SCOPES = "user:read:follows"
