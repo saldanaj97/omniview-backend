@@ -3,7 +3,7 @@ from urllib.parse import urlencode
 import httpx
 from fastapi import HTTPException
 
-import config
+import app.core.config as config
 
 
 def get_authorization_url(state=None):
@@ -11,8 +11,6 @@ def get_authorization_url(state=None):
     # Space delimiter for scopes
     for scope in config.TWITCH_SCOPES:
         scope = scope.replace(":", "%20")
-
-    print(scope)
 
     params = {
         "client_id": config.TWITCH_CLIENT_ID,
