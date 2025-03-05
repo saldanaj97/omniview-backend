@@ -42,3 +42,20 @@ async def get_oauth_token(code):
         raise HTTPException(status_code=400, detail="Failed to retrieve access token")
 
     return response.json()
+
+
+async def get_client_credentials_oauth_token():
+    """Client credentials grant flow."""
+    params = {
+        "client_id": config.TWITCH_CLIENT_ID,
+        "client_secret": config.TWITCH_SECRET,
+        "grant_type": "client_credentials",
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post("https://id.twitch.tv/oauth2/token", data=params)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Failed to retrieve access token")
+
+    return response.json()

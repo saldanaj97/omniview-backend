@@ -55,11 +55,27 @@
       </tr>
       {% endif %}
     </table>
+        <a href="/auth/logout">Logout</a>
+    {% elif token %}
+        <h1>Public Authentication Successful</h1>
+        <table>
+            <tr>
+                <th>Access Token</th>
+                <td>{{ token }}</td>
+            </tr>
+        </table>
+        <br/>
+        <a href="/auth/logout">Logout</a>
     {% else %}
     <h1>Twitch Authentication</h1>
     <a href="/auth/twitch">
       <img src="https://static-cdn.jtvnw.net/connects/image/Twitch-Connect-Button.png" alt="Connect with Twitch" />
     </a>
+        <br/>
+        <a href="/auth">
+            Authorize without login
+        </a>
+        <br/>
     {% endif %}
   </body>
 </html>

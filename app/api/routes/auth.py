@@ -11,6 +11,37 @@ router = APIRouter()
 VALID_STATES = set()
 
 
+@router.get("/")
+async def index(request: Request):
+    """
+    Initiates the Twitch OAuth client credentials flow.
+
+    This function generates an access token so users do not have
+    to login to access content that does not require a login.
+
+    Returns:
+        RedirectResponse: A redirect to the home page or error page.
+
+    Raises:
+        HTTPException: If the state is invalid or missing.
+    """
+    # Generate access token by following client credentials flow
+    token_data = await auth.get_client_credentials_oauth_token()
+    access_token = token_data.get("access_token")
+    expires_in = token_data.get("expires_in")
+
+    public_session_data = {
+        "access_token": access_token,
+        "expires_in": expires_in,
+    }
+
+    if "session" in request.scope:
+        request.session["access_token"] = access_token
+        request.session["expires_in"] = expires_in
+
+    return RedirectResponse(url="/")
+
+
 @router.get("/twitch")
 async def twitch_auth():
     """

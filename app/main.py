@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api.routes import auth, users
+from app.api.routes import auth, users, public
 from app.core.config import SECRET_KEY, TEMPLATES_DIR
 
 # Create FastAPI app
@@ -27,9 +27,19 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 # Include routers
 app.include_router(auth.router, prefix="/auth", tags=["authentication"])
 app.include_router(users.router, prefix="/user", tags=["users"])
+app.include_router(public.router, prefix="/public", tags=["public"])
+
+
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    access_token = request.session.get("access_token")
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "token": access_token}
+    )
+
 
 # Home route that shows login or user info
-@app.get("/", response_class=HTMLResponse)
+@app.get("/user", response_class=HTMLResponse)
 async def root(request: Request):
     user = request.session.get("user")
     return templates.TemplateResponse("index.html", {"request": request, "user": user})
