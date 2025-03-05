@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 
 from app.core.security import generate_state_token
@@ -30,16 +30,11 @@ async def index(request: Request):
     access_token = token_data.get("access_token")
     expires_in = token_data.get("expires_in")
 
-    public_session_data = {
-        "access_token": access_token,
-        "expires_in": expires_in,
-    }
-
     if "session" in request.scope:
         request.session["access_token"] = access_token
         request.session["expires_in"] = expires_in
 
-    return RedirectResponse(url="/")
+    return Response(content="Access token generated successfully.")
 
 
 @router.get("/twitch")
@@ -133,7 +128,7 @@ async def twitch_callback(
     if "session" in request.scope:
         request.session["user"] = user_data
 
-    return RedirectResponse(url="/")
+    return Response(content="Authentication successful.")
 
 
 @router.get("/logout")
@@ -152,4 +147,4 @@ async def logout(request: Request):
     """
     if "session" in request.scope:
         request.session.clear()
-    return RedirectResponse(url="/")
+    return Response(content="Logged out successfully.")
