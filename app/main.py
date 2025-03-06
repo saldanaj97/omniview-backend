@@ -31,9 +31,6 @@ app.add_middleware(
     same_site="lax",
 )
 
-# Set up templates
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
-
 # Include routers
 app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(users.router, prefix="/api/user", tags=["users"])

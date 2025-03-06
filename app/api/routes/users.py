@@ -15,4 +15,4 @@ async def get_following(request: Request):
     following_data = await user.get_user_follows(
         access_token=logged_in_user["access_token"], user_id=logged_in_user["id"]
     )
-    return {"following": following_data}
+    return following_data
