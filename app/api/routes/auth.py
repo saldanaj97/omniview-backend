@@ -34,7 +34,7 @@ async def index(request: Request):
         request.session["access_token"] = access_token
         request.session["expires_in"] = expires_in
 
-    return Response(content="Access token generated successfully.")
+    return {"access_token": access_token, "expires_in": expires_in}
 
 
 @router.get("/twitch")
