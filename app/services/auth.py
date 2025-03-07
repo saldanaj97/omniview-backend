@@ -8,15 +8,14 @@ import app.core.config as config
 
 def get_authorization_url(state=None):
     """Generate the Twitch authorization URL."""
-    # Space delimiter for scopes
-    for scope in config.TWITCH_SCOPES:
-        scope = scope.replace(":", "%20")
+    # Correctly format the scopes
+    scopes = config.TWITCH_SCOPES
 
     params = {
         "client_id": config.TWITCH_CLIENT_ID,
         "redirect_uri": config.CALLBACK_URL,
         "response_type": "code",
-        "scope": config.TWITCH_SCOPES,
+        "scope": scopes,
     }
 
     if state:
@@ -27,6 +26,7 @@ def get_authorization_url(state=None):
 
 async def get_oauth_token(code):
     """Exchange authorization code for OAuth tokens."""
+
     params = {
         "client_id": config.TWITCH_CLIENT_ID,
         "client_secret": config.TWITCH_SECRET,

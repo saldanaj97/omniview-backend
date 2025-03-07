@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException, Request, Response
+import base64
+import json
+
+from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
 
 from app.core.security import generate_state_token
@@ -12,7 +15,7 @@ VALID_STATES = set()
 
 
 @router.get("/")
-async def index(request: Request):
+async def index():
     """
     Initiates the Twitch OAuth client credentials flow.
 
@@ -30,24 +33,13 @@ async def index(request: Request):
     access_token = token_data.get("access_token")
     expires_in = token_data.get("expires_in")
 
-    if "session" in request.scope:
-        request.session["access_token"] = access_token
-        request.session["expires_in"] = expires_in
-
     return {"access_token": access_token, "expires_in": expires_in}
 
 
-@router.get("/twitch")
+@router.get("/twitch/login")
 async def twitch_auth():
     """
     Initiates the Twitch OAuth authentication flow.
-
-    This function generates a random state token for CSRF protection,
-    stores it in a global set of valid states, and redirects the user
-    to the Twitch authorization page.
-
-    Returns:
-        RedirectResponse: A redirect to the Twitch authorization URL.
     """
     # Generate a random state string to prevent CSRF
     state = generate_state_token()
@@ -55,42 +47,23 @@ async def twitch_auth():
     # Store the state in our valid states set
     VALID_STATES.add(state)
 
-    # Set a reasonable TTL by scheduling cleanup (would require background tasks)
-    # For now, we'll keep it simple and just store it
-
     # Get authorization URL with state
     auth_url = auth.get_authorization_url(state)
 
-    # Redirect to Twitch
-    return RedirectResponse(url=auth_url)
+    # Return the URL instead of redirecting
+    return {"url": auth_url}
 
 
 @router.get("/twitch/callback")
-async def twitch_callback(
-    request: Request, code: str = None, state: str = None, error: str = None
-):
+async def twitch_callback(code: str = None, state: str = None, error: str = None):
     """
     Handles the callback from Twitch OAuth authentication flow.
-
-    This function validates the state token for CSRF protection,
-    exchanges the authorization code for access and refresh tokens,
-    retrieves the user profile, and stores the authentication data in session.
-
-    Args:
-        request (Request): The FastAPI request object.
-        code (str, optional): The authorization code from Twitch.
-        state (str, optional): The state token for CSRF validation.
-        error (str, optional): Error message from Twitch, if any.
-
-    Returns:
-        RedirectResponse: A redirect to the home page or error page.
-
-    Raises:
-        HTTPException: If the state is invalid or missing.
     """
+    print("Callback received with code:", code)
+
     # Handle error or cancelled authentication
     if error:
-        return RedirectResponse(url=f"/?error={error}")
+        return RedirectResponse(url=f"http://localhost:3000?error={error}")
 
     # Validate state if provided
     is_valid_state = state and state in VALID_STATES
@@ -101,34 +74,45 @@ async def twitch_callback(
 
     # Check if state is valid
     if not is_valid_state:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid state parameter. This could be a CSRF attempt or the session has expired.",
-        )
+        return RedirectResponse(url="http://localhost:3000?error=invalid_state")
 
     # State is missing
     if not state:
-        raise HTTPException(status_code=400, detail="Missing state parameter")
+        return RedirectResponse(url="http://localhost:3000?error=missing_state")
 
-    # Exchange code for token
-    token_data = await auth.get_oauth_token(code)
-    access_token = token_data.get("access_token")
-    refresh_token = token_data.get("refresh_token")
+    try:
+        # Exchange code for token
+        token_data = await auth.get_oauth_token(code)
+        access_token = token_data.get("access_token")
+        refresh_token = token_data.get("refresh_token")
 
-    # Get user profile
-    user_profile = await user.get_user_profile(access_token)
+        # Get user profile
+        user_profile = await user.get_user_profile(access_token)
 
-    # Store tokens and profile in session
-    user_data = {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        **user_profile,
-    }
+        if not user_profile:
+            return RedirectResponse(
+                url="http://localhost:3000?error=invalid_access_token"
+            )
 
-    if "session" in request.scope:
-        request.session["user"] = user_data
+        # Create a simple encoded payload - in production use JWT or a more secure method
+        # This is a simplified example
+        auth_data = {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            **user_profile,
+        }
 
-    return Response(content="Authentication successful.")
+        # At the end, redirect to frontend with data
+        auth_data_encoded = base64.urlsafe_b64encode(
+            json.dumps(auth_data).encode()
+        ).decode()
+
+        return RedirectResponse(
+            url=f"http://localhost:3000/auth/success?data={auth_data_encoded}"
+        )
+
+    except Exception as e:
+        return RedirectResponse(url=f"http://localhost:3000?error={str(e)}")
 
 
 @router.get("/logout")

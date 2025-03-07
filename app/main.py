@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.routes import auth, public, users
-from app.core.config import SECRET_KEY, TEMPLATES_DIR
+from app.core.config import SECRET_KEY
 
 # Create FastAPI app
 app = FastAPI(
