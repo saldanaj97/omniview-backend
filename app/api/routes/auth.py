@@ -59,57 +59,67 @@ async def twitch_callback(code: str = None, state: str = None, error: str = None
     """
     Handles the callback from Twitch OAuth authentication flow.
     """
-    print("Callback received with code:", code)
-
     # Handle error or cancelled authentication
     if error:
         return RedirectResponse(url=f"http://localhost:3000?error={error}")
 
-    # Validate state if provided
-    is_valid_state = state and state in VALID_STATES
-
-    # Remove the state from valid states (one-time use)
-    if state and state in VALID_STATES:
-        VALID_STATES.remove(state)
-
-    # Check if state is valid
-    if not is_valid_state:
-        return RedirectResponse(url="http://localhost:3000?error=invalid_state")
-
-    # State is missing
+    # Validate state
     if not state:
         return RedirectResponse(url="http://localhost:3000?error=missing_state")
+
+    is_valid_state = state in VALID_STATES
+
+    # Remove the state from valid states (one-time use)
+    if state in VALID_STATES:
+        VALID_STATES.remove(state)
+
+    if not is_valid_state:
+        return RedirectResponse(url="http://localhost:3000?error=invalid_state")
 
     try:
         # Exchange code for token
         token_data = await auth.get_oauth_token(code)
         access_token = token_data.get("access_token")
         refresh_token = token_data.get("refresh_token")
+        max_age = token_data.get("expires_in", 3600)
 
         # Get user profile
         user_profile = await user.get_user_profile(access_token)
-
         if not user_profile:
             return RedirectResponse(
                 url="http://localhost:3000?error=invalid_access_token"
             )
 
-        # Create a simple encoded payload - in production use JWT or a more secure method
-        # This is a simplified example
-        auth_data = {
-            "access_token": access_token,
-            "refresh_token": refresh_token,
-            **user_profile,
+        # Prepare response with redirect
+        response = RedirectResponse(url="http://localhost:3000/auth/success")
+
+        # Set user session cookie
+        user_data = {
+            "user_id": user_profile.get("id"),
+            "display_name": user_profile.get("display_name"),
+            "profile_image_url": user_profile.get("profile_image_url"),
         }
-
-        # At the end, redirect to frontend with data
-        auth_data_encoded = base64.urlsafe_b64encode(
-            json.dumps(auth_data).encode()
-        ).decode()
-
-        return RedirectResponse(
-            url=f"http://localhost:3000/auth/success?data={auth_data_encoded}"
+        response.set_cookie(
+            key="auth_session",
+            value=json.dumps(user_data),
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=max_age,
         )
+
+        # Set auth tokens cookie
+        token_data = {"access_token": access_token, "refresh_token": refresh_token}
+        response.set_cookie(
+            key="auth_tokens",
+            value=json.dumps(token_data),
+            httponly=True,
+            secure=True,
+            samesite="strict",
+            max_age=max_age,
+        )
+
+        return response
 
     except Exception as e:
         return RedirectResponse(url=f"http://localhost:3000?error={str(e)}")
