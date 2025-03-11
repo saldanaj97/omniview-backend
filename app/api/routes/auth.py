@@ -93,26 +93,32 @@ async def twitch_callback(code: str = None, state: str = None, error: str = None
         # Prepare response with redirect
         response = RedirectResponse(url="http://localhost:3000/auth/success")
 
-        # Set user session cookie
+        # Set user session cookie - use base64 encoding to avoid escape character issues
         user_data = {
             "user_id": user_profile.get("id"),
             "display_name": user_profile.get("display_name"),
             "profile_image_url": user_profile.get("profile_image_url"),
         }
+        user_json = json.dumps(user_data)
+        user_encoded = base64.b64encode(user_json.encode("utf-8")).decode("utf-8")
+
         response.set_cookie(
-            key="auth_session",
-            value=json.dumps(user_data),
+            key="user_session",
+            value=user_encoded,
             httponly=True,
             secure=True,
             samesite="lax",
             max_age=max_age,
         )
 
-        # Set auth tokens cookie
+        # Set auth tokens cookie - use base64 encoding to avoid escape character issues
         token_data = {"access_token": access_token, "refresh_token": refresh_token}
+        token_json = json.dumps(token_data)
+        token_encoded = base64.b64encode(token_json.encode("utf-8")).decode("utf-8")
+
         response.set_cookie(
-            key="auth_tokens",
-            value=json.dumps(token_data),
+            key="auth_token",
+            value=token_encoded,
             httponly=True,
             secure=True,
             samesite="strict",
@@ -128,17 +134,19 @@ async def twitch_callback(code: str = None, state: str = None, error: str = None
 @router.get("/logout")
 async def logout(request: Request):
     """
-    Logout an authenticated user by clearing the session.
-
-    This function handles user logout by removing all session data.
-    After the session is cleared, the user is redirected to the home page.
-
-    Args:
-        request (Request): The FastAPI request object containing the session.
-
-    Returns:
-        RedirectResponse: A redirect response to the home page.
+    Logout an authenticated user by clearing cookies.
     """
+    response = Response(content="Logged out successfully.")
+
+    # Clear both cookies
+    response.delete_cookie(
+        key="user_session", httponly=True, secure=True, samesite="lax"
+    )
+    response.delete_cookie(
+        key="auth_token", httponly=True, secure=True, samesite="strict"
+    )
+
     if "session" in request.scope:
         request.session.clear()
-    return Response(content="Logged out successfully.")
+
+    return response
