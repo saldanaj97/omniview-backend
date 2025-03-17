@@ -4,7 +4,7 @@ import json
 from fastapi import APIRouter, Request
 from fastapi.responses import RedirectResponse
 
-import app.services.user as user
+import app.services.twitch.user as user
 
 router = APIRouter()
 

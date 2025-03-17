@@ -1,6 +1,6 @@
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException
 
-import app.services.public as public
+import app.services.twitch.public as public
 
 router = APIRouter()
 
