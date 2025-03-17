@@ -36,7 +36,7 @@ async def index():
     return {"access_token": access_token, "expires_in": expires_in}
 
 
-@router.get("/twitch/login")
+@router.get("/login")
 async def twitch_auth():
     """
     Initiates the Twitch OAuth authentication flow.
@@ -54,7 +54,7 @@ async def twitch_auth():
     return {"url": auth_url}
 
 
-@router.get("/twitch/callback")
+@router.get("/callback")
 async def twitch_callback(code: str = None, state: str = None, error: str = None):
     """
     Handles the callback from Twitch OAuth authentication flow.

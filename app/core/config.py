@@ -18,5 +18,12 @@ CALLBACK_URL = os.getenv(
 )
 SECRET_KEY = os.getenv("SECRET_KEY")
 
-# API scopes to request
+# Twitch API scopes to request
 TWITCH_SCOPES = "user:read:follows"
+
+# Google OAuth configuration
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+GOOGLE_CALLBACK_URL = os.getenv(
+    "GOOGLE_CALLBACK_URL", "http://localhost:8000/api/auth/google/callback"
+)

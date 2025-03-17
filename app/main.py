@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api.routes import auth, public, users
+from app.api.routes.google import auth as google_auth
+from app.api.routes.twitch import auth as twitch_auth
+from app.api.routes.twitch import public as twitch_public
+from app.api.routes.twitch import users as twitch_users
 from app.core.config import SECRET_KEY
 
 # Create FastAPI app
@@ -31,10 +32,21 @@ app.add_middleware(
     same_site="lax",
 )
 
-# Include routers
-app.include_router(auth.router, prefix="/api/auth", tags=["authentication"])
-app.include_router(users.router, prefix="/api/user", tags=["users"])
-app.include_router(public.router, prefix="/api/public", tags=["public"])
+# Routers
+
+# Twitch API routes
+app.include_router(
+    twitch_auth.router, prefix="/api/auth/twitch", tags=["authentication"]
+)
+app.include_router(twitch_users.router, prefix="/api/user/twitch", tags=["users"])
+app.include_router(twitch_public.router, prefix="/api/public/twitch", tags=["public"])
+
+# Google API routes
+app.include_router(
+    google_auth.router, prefix="/api/auth/google", tags=["authentication"]
+)
+# app.include_router(google_users.router, prefix="/api/user/google", tags=["users"])
+# app.include_router(google_public.router, prefix="/api/public/google", tags=["public"])
 
 
 if __name__ == "__main__":
