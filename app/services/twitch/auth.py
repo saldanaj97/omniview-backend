@@ -13,7 +13,7 @@ def get_authorization_url(state=None):
 
     params = {
         "client_id": config.TWITCH_CLIENT_ID,
-        "redirect_uri": config.CALLBACK_URL,
+        "redirect_uri": config.TWITCH_CALLBACK_URL,
         "response_type": "code",
         "scope": scopes,
     }
@@ -32,7 +32,7 @@ async def get_oauth_token(code):
         "client_secret": config.TWITCH_SECRET,
         "code": code,
         "grant_type": "authorization_code",
-        "redirect_uri": config.CALLBACK_URL,
+        "redirect_uri": config.TWITCH_CALLBACK_URL,
     }
 
     async with httpx.AsyncClient() as client:

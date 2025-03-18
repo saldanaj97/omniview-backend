@@ -1,3 +1,4 @@
+import json
 import os
 from pathlib import Path
 
@@ -13,7 +14,7 @@ load_dotenv(ENV_FILE)
 # Twitch OAuth configuration
 TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
 TWITCH_SECRET = os.getenv("TWITCH_SECRET")
-CALLBACK_URL = os.getenv(
+TWITCH_CALLBACK_URL = os.getenv(
     "CALLBACK_URL", "http://localhost:8000/api/auth/twitch/callback"
 )
 SECRET_KEY = os.getenv("SECRET_KEY")
