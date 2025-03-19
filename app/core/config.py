@@ -11,6 +11,9 @@ ENV_FILE = BASE_DIR / ".env"
 # Load environment variables
 load_dotenv(ENV_FILE)
 
+# Development settings
+DEBUG = os.getenv("DEBUG", "False") == "True"
+
 # Twitch OAuth configuration
 TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
 TWITCH_SECRET = os.getenv("TWITCH_SECRET")
@@ -23,8 +26,12 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 TWITCH_SCOPES = "user:read:follows"
 
 # Google OAuth configuration
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
-GOOGLE_CALLBACK_URL = os.getenv(
-    "GOOGLE_CALLBACK_URL", "http://localhost:8000/api/auth/google/callback"
-)
+GOOGLE_CLIENT_SECRET = json.loads(os.getenv("GOOGLE_CLIENT_SECRET_JSON"))
+
+# Google API scopes and config to request
+GOOGLE_SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
+GOOGLE_API_SERVICE_NAME = "youtube"
+GOOGLE_API_VERSION = "v3"
+
+# YouTube API key
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
