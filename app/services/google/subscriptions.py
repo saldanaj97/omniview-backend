@@ -1,7 +1,7 @@
 import asyncio
 import re
 
-import aiohttp
+import httpx
 from bs4 import BeautifulSoup
 
 from app.core.config import GOOGLE_YOUTUBE_DATA_API_KEY
@@ -19,14 +19,14 @@ async def check_multiple_channels_live_status(channel_ids):
     """
     results = {}
 
-    # Use a single shared session for all requests
-    conn = aiohttp.TCPConnector(limit=50)
-    timeout = aiohttp.ClientTimeout(total=15)
+    # Use a single shared client for all requests
+    limits = httpx.Limits(max_connections=50)
+    timeout = httpx.Timeout(timeout=15.0)
 
-    async with aiohttp.ClientSession(connector=conn, timeout=timeout) as session:
+    async with httpx.AsyncClient(limits=limits, timeout=timeout) as client:
         # Create tasks for all channels in one go
         tasks = [
-            check_channel_live_status_with_session(channel_id, session)
+            check_channel_live_status_with_session(channel_id, client)
             for channel_id in channel_ids
         ]
 
@@ -49,7 +49,7 @@ async def check_multiple_channels_live_status(channel_ids):
 
 
 async def check_channel_live_status_with_session(
-    channel_id: str, session: aiohttp.ClientSession
+    channel_id: str, client: httpx.AsyncClient
 ):
     """Check if a YouTube channel is currently live streaming using provided session"""
     # Initialize with default values
@@ -57,7 +57,7 @@ async def check_channel_live_status_with_session(
 
     try:
         # 1. Check if channel has configured livestream
-        canonical_url = await get_canonical_url(channel_id, session)
+        canonical_url = await get_canonical_url(channel_id, client)
         if not canonical_url or "/watch?v=" not in canonical_url:
             return channel_data
 
@@ -71,7 +71,7 @@ async def check_channel_live_status_with_session(
         channel_data["vid"] = video_id
 
         # 3. Get video details from YouTube API
-        video_data = await fetch_video_details(video_id, session)
+        video_data = await fetch_video_details(video_id, client)
         if "error" in video_data or not video_data.get("items"):
             return (
                 {"error": video_data.get("error")}
@@ -86,20 +86,20 @@ async def check_channel_live_status_with_session(
         return {"cid": channel_id, "live": False, "error": str(e)}
 
 
-async def get_canonical_url(channel_id, session):
+async def get_canonical_url(channel_id, client):
     """
     Asynchronously retrieves the canonical URL for a YouTube channel's live stream.
 
     This function makes an HTTP GET request to the YouTube channel's live page
     and parses the HTML response to extract the canonical URL from the metadata.
     """
-    async with session.get(
-        f"https://youtube.com/channel/{channel_id}/live", timeout=10
-    ) as response:
-        html = await response.text()
-        soup = BeautifulSoup(html, "html.parser")
-        canonical_url_tag = soup.find("link", rel="canonical")
-        return canonical_url_tag.get("href") if canonical_url_tag else None
+    response = await client.get(
+        f"https://www.youtube.com/channel/{channel_id}/live", timeout=10.0
+    )
+    html = response.text
+    soup = BeautifulSoup(html, "html.parser")
+    canonical_url_tag = soup.find("link", rel="canonical")
+    return canonical_url_tag.get("href") if canonical_url_tag else None
 
 
 def extract_video_id(url):
@@ -110,7 +110,7 @@ def extract_video_id(url):
     return match.group(0) if match else None
 
 
-async def fetch_video_details(video_id, session):
+async def fetch_video_details(video_id, client):
     """
     Asynchronously fetches video details from the YouTube API.
 
@@ -118,8 +118,8 @@ async def fetch_video_details(video_id, session):
     details (liveStreamingDetails and snippet) for a given video ID.
     """
     youtube_url = f"https://www.googleapis.com/youtube/v3/videos?key={GOOGLE_YOUTUBE_DATA_API_KEY}&part=liveStreamingDetails,snippet&id={video_id}"
-    async with session.get(youtube_url, timeout=10) as api_response:
-        return await api_response.json()
+    response = await client.get(youtube_url, timeout=10.0)
+    return response.json()
 
 
 def extract_video_metadata(item, channel_data):

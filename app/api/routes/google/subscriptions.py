@@ -25,7 +25,7 @@ async def index(request: Request):
     }
 
 
-@router.get("/subscriptions")
+@router.get("/subscriptions/live")
 async def get_subscriptions(request: Request):
     """Get list of user's subscriptions that are currently live streaming"""
     if "credentials" not in request.session:
