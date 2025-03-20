@@ -1,5 +1,3 @@
-import asyncio
-
 import google.oauth2.credentials
 import googleapiclient.discovery
 from fastapi import APIRouter, Request
@@ -9,7 +7,6 @@ from app.core.config import GOOGLE_API_SERVICE_NAME, GOOGLE_API_VERSION
 from app.services.google.auth import credentials_to_dict
 from app.services.google.subscriptions import (
     check_all_channels_live_status,
-    check_multiple_channels_live_status,
     enrich_and_filter_live_subscriptions,
     fetch_all_subscriptions,
 )
