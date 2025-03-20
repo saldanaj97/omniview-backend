@@ -3,7 +3,6 @@ import google_auth_oauthlib.flow
 import requests
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from fastapi.security import OAuth2AuthorizationCodeBearer
 
 from app.core.config import GOOGLE_CLIENT_SECRET
 from app.services.google.auth import credentials_to_dict
@@ -16,17 +15,11 @@ API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
 
 
-# OAuth2 scheme for authorization
-oauth2_scheme = OAuth2AuthorizationCodeBearer(
-    authorizationUrl="/authorize", tokenUrl="/oauth2callback"
-)
-
-
 @router.get("/authenticate")
 async def index(request: Request):
     """Home page with authentication link"""
-    if request.session.get("credentials"):
-        return request.session["credentials"]
+    if request.session.get("google_credentials"):
+        return request.session["google_credentials"]
 
     return {
         "message": "YouTube Live Broadcasts API",
@@ -69,7 +62,7 @@ async def oauth2callback(request: Request):
 
     # Store credentials in session
     credentials = flow.credentials
-    request.session["credentials"] = credentials_to_dict(credentials)
+    request.session["google_credentials"] = credentials_to_dict(credentials)
 
     return RedirectResponse(url="/api/google/authenticate")
 
@@ -77,11 +70,11 @@ async def oauth2callback(request: Request):
 @router.get("/revoke")
 async def revoke(request: Request):
     """Revoke OAuth token"""
-    if "credentials" not in request.session:
+    if "google_credentials" not in request.session:
         return {"message": "No credentials to revoke"}
 
     credentials = google.oauth2.credentials.Credentials(
-        **request.session["credentials"]
+        **request.session["google_credentials"]
     )
 
     revoke_response = requests.post(
@@ -92,7 +85,7 @@ async def revoke(request: Request):
     )
 
     if revoke_response.status_code == 200:
-        request.session.pop("credentials", None)
+        request.session.pop("google_credentials", None)
         return {"message": "Credentials successfully revoked"}
     else:
         return {"message": f"An error occurred: {revoke_response.text}"}
@@ -101,6 +94,6 @@ async def revoke(request: Request):
 @router.get("/clear")
 async def clear_credentials(request: Request):
     """Clear credentials from session"""
-    if "credentials" in request.session:
-        request.session.pop("credentials", None)
+    if "google_credentials" in request.session:
+        request.session.pop("google_credentials", None)
     return {"message": "Credentials have been cleared"}

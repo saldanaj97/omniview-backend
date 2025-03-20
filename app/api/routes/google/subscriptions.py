@@ -17,8 +17,8 @@ router = APIRouter()
 @router.get("/")
 async def index(request: Request):
     """Home page with authentication link"""
-    if "credentials" in request.session:
-        return request.session["credentials"]
+    if "google_credentials" in request.session:
+        return request.session["google_credentials"]
     return {
         "message": "You are not authenticated. Please log in using the link below.",
         "link": str(request.url_for("authorize")),
@@ -28,11 +28,11 @@ async def index(request: Request):
 @router.get("/subscriptions/live")
 async def get_subscriptions(request: Request):
     """Get list of user's subscriptions that are currently live streaming"""
-    if "credentials" not in request.session:
+    if "google_credentials" not in request.session:
         return RedirectResponse(url=request.url_for("authorize"))
 
     credentials = google.oauth2.credentials.Credentials(
-        **request.session["credentials"]
+        **request.session["google_credentials"]
     )
     youtube = googleapiclient.discovery.build(
         GOOGLE_API_SERVICE_NAME, GOOGLE_API_VERSION, credentials=credentials
@@ -48,6 +48,6 @@ async def get_subscriptions(request: Request):
     )
 
     # Update credentials in session in case token was refreshed
-    request.session["credentials"] = credentials_to_dict(credentials)
+    request.session["google_credentials"] = credentials_to_dict(credentials)
 
     return live_subscriptions
