@@ -1,5 +1,3 @@
-import os
-
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
 import requests
@@ -17,8 +15,6 @@ SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
 API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
 
-# For development only - disable in production
-os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # OAuth2 scheme for authorization
 oauth2_scheme = OAuth2AuthorizationCodeBearer(
@@ -75,7 +71,7 @@ async def oauth2callback(request: Request):
     credentials = flow.credentials
     request.session["credentials"] = credentials_to_dict(credentials)
 
-    return RedirectResponse(url="/api/google/auth")
+    return RedirectResponse(url="/api/google/authenticate")
 
 
 @router.get("/revoke")
