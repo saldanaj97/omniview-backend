@@ -36,9 +36,16 @@ GOOGLE_API_VERSION = "v3"
 # YouTube API key
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 
-# Kick OAuth
+# Kick Configuration
 KICK_CLIENT_ID = os.getenv("KICK_CLIENT_ID")
 KICK_CLIENT_SECRET = os.getenv("KICK_CLIENT_SECRET")
+KICK_REDIRECT_URL = os.getenv(
+    "KICK_REDIRECT_URL", "http://localhost:8000/api/kick/oauth/kick/callback"
+)
+KICK_ENDPOINTS = {
+    "authURL": "https://id.kick.com/oauth/authorize",
+    "tokenURL": "https://id.kick.com/oauth/token",
+}
 KICK_SCOPES = [
     "user:read",
     "channel:read",

@@ -1,25 +1,20 @@
 import base64
 import json
-import os
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
-from fastapi.security import OAuth2AuthorizationCodeBearer
 
-from app.core.config import KICK_CLIENT_ID, KICK_CLIENT_SECRET, KICK_SCOPES
+from app.core.config import (
+    KICK_CLIENT_ID,
+    KICK_CLIENT_SECRET,
+    KICK_ENDPOINTS,
+    KICK_REDIRECT_URL,
+    KICK_SCOPES,
+)
 from app.core.security import generate_code_challenge, generate_code_verifier
 
 router = APIRouter()
-
-ENDPOINT = {
-    "authURL": "https://id.kick.com/oauth/authorize",
-    "tokenURL": "https://id.kick.com/oauth/token",
-}
-
-REDIRECT_URL = os.getenv(
-    "KICK_REDIRECT_URL", "http://localhost:8000/api/kick/oauth/kick/callback"
-)
 
 
 @router.get("/")
@@ -44,7 +39,7 @@ async def kick_oauth_redirect():
 
     auth_params = {
         "client_id": KICK_CLIENT_ID,
-        "redirect_uri": REDIRECT_URL,
+        "redirect_uri": KICK_REDIRECT_URL,
         "response_type": "code",
         "scope": " ".join(KICK_SCOPES),
         "state": state_encoded,
@@ -52,7 +47,7 @@ async def kick_oauth_redirect():
         "code_challenge_method": "S256",
     }
 
-    auth_url = f"{ENDPOINT['authURL']}?{httpx.QueryParams(auth_params)}"
+    auth_url = f"{KICK_ENDPOINTS['authURL']}?{httpx.QueryParams(auth_params)}"
     return RedirectResponse(auth_url)
 
 
@@ -69,14 +64,14 @@ async def kick_oauth_callback(request: Request, code: str, state: str):
             "grant_type": "authorization_code",
             "client_id": KICK_CLIENT_ID,
             "client_secret": KICK_CLIENT_SECRET,
-            "redirect_uri": REDIRECT_URL,
+            "redirect_uri": KICK_REDIRECT_URL,
             "code_verifier": code_verifier,
             "code": code,
         }
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                ENDPOINT["tokenURL"],
+                KICK_ENDPOINTS["tokenURL"],
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data=token_params,
             )
