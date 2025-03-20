@@ -39,3 +39,9 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 # Kick OAuth
 KICK_CLIENT_ID = os.getenv("KICK_CLIENT_ID")
 KICK_CLIENT_SECRET = os.getenv("KICK_CLIENT_SECRET")
+KICK_SCOPES = [
+    "user:read",
+    "channel:read",
+    "chat:write",
+    "events:subscribe",
+]
