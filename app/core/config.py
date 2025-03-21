@@ -18,7 +18,7 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
 TWITCH_SECRET = os.getenv("TWITCH_SECRET")
 TWITCH_CALLBACK_URL = os.getenv(
-    "CALLBACK_URL", "http://localhost:8000/api/auth/twitch/callback"
+    "TWITCH_CALLBACK_URL", "http://localhost:8000/api/twitch/auth/callback"
 )
 SECRET_KEY = os.getenv("SECRET_KEY")
 

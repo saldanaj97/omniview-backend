@@ -103,7 +103,7 @@ async def twitch_callback(code: str = None, state: str = None, error: str = None
         user_encoded = base64.b64encode(user_json.encode("utf-8")).decode("utf-8")
 
         response.set_cookie(
-            key="user_session",
+            key="twitch_user_session",
             value=user_encoded,
             httponly=True,
             secure=True,
@@ -117,7 +117,7 @@ async def twitch_callback(code: str = None, state: str = None, error: str = None
         token_encoded = base64.b64encode(token_json.encode("utf-8")).decode("utf-8")
 
         response.set_cookie(
-            key="auth_token",
+            key="twitch_auth_token",
             value=token_encoded,
             httponly=True,
             secure=True,

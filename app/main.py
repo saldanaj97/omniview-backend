@@ -43,10 +43,10 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Twitch API routes
 app.include_router(
-    twitch_auth.router, prefix="/api/auth/twitch", tags=["authentication"]
+    twitch_auth.router, prefix="/api/twitch/auth", tags=["authentication"]
 )
-app.include_router(twitch_users.router, prefix="/api/user/twitch", tags=["users"])
-app.include_router(twitch_public.router, prefix="/api/public/twitch", tags=["public"])
+app.include_router(twitch_users.router, prefix="/api/twitch/user", tags=["users"])
+app.include_router(twitch_public.router, prefix="/api/twitch/public", tags=["public"])
 
 # Google API routes
 app.include_router(google_auth.router, prefix="/api/google", tags=["authentication"])
