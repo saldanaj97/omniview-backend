@@ -41,13 +41,13 @@ async def authorize(request: Request):
     )
 
     request.session["state"] = state
-    return RedirectResponse(url=authorization_url)
+    return {"authorization_url": authorization_url}
 
 
 @router.get("/oauth2callback")
 async def oauth2callback(request: Request):
     """Handle OAuth callback"""
-    state = request.session.get("state")
+    state = request.query_params.get("state")
     if not state:
         raise HTTPException(status_code=400, detail="State not found in session")
 
@@ -64,7 +64,7 @@ async def oauth2callback(request: Request):
     credentials = flow.credentials
     request.session["google_credentials"] = credentials_to_dict(credentials)
 
-    return RedirectResponse(url="/api/google/authenticate")
+    return RedirectResponse(url="http://localhost:3000", status_code=302)
 
 
 @router.get("/revoke")

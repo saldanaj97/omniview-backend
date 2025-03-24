@@ -121,7 +121,7 @@ async def twitch_callback(code: str = None, state: str = None, error: str = None
             value=token_encoded,
             httponly=True,
             secure=True,
-            samesite="strict",
+            samesite="lax",
             max_age=max_age,
         )
 
@@ -140,10 +140,10 @@ async def logout(request: Request):
 
     # Clear both cookies
     response.delete_cookie(
-        key="user_session", httponly=True, secure=True, samesite="lax"
+        key="twitch_user_session", httponly=True, secure=True, samesite="lax"
     )
     response.delete_cookie(
-        key="auth_token", httponly=True, secure=True, samesite="strict"
+        key="twitch_auth_token", httponly=True, secure=True, samesite="lax"
     )
 
     if "session" in request.scope:
