@@ -86,10 +86,26 @@ async def kick_oauth_callback(request: Request, code: str, state: str):
         if not credentials:
             raise HTTPException(status_code=400, detail="No credentials found")
 
-        # Store credentials without overwriting other services' data
-        request.session["kick_credentials"] = credentials
+        response = RedirectResponse(url="http://localhost:3000/auth/success")
 
-        return RedirectResponse(url="http://localhost:3000", status_code=302)
+        # Set user session cookie - use base64 encoding to avoid escape character issues
+        credentials_json = json.dumps(credentials)
+        credentials_encoded = base64.b64encode(credentials_json.encode("utf-8")).decode(
+            "utf-8"
+        )
+        response.set_cookie(
+            key="kick_session",
+            value=credentials_encoded,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+        )
+
+        # Store the credentials in the session
+        if "session" in request.scope:
+            request.session["kick_credentials"] = credentials
+
+        return response
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
