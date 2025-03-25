@@ -41,7 +41,7 @@ async def authorize(request: Request):
     )
 
     request.session["state"] = state
-    return {"authorization_url": authorization_url}
+    return {"url": authorization_url}
 
 
 @router.get("/oauth2callback")
