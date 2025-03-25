@@ -17,7 +17,7 @@ from app.core.security import generate_code_challenge, generate_code_verifier
 router = APIRouter()
 
 
-@router.get("/")
+@router.get("/authenticated")
 async def index(request: Request):
     """Home page with authentication link"""
     if request.session.get("kick_credentials"):
@@ -29,7 +29,7 @@ async def index(request: Request):
     }
 
 
-@router.get("/oauth/kick/")
+@router.get("/oauth")
 async def kick_oauth_redirect():
     code_verifier = generate_code_verifier()
     code_challenge = generate_code_challenge(code_verifier)
@@ -48,10 +48,10 @@ async def kick_oauth_redirect():
     }
 
     auth_url = f"{KICK_ENDPOINTS['authURL']}?{httpx.QueryParams(auth_params)}"
-    return RedirectResponse(auth_url)
+    return {"url": auth_url}
 
 
-@router.get("/oauth/kick/callback")
+@router.get("/oauth/callback")
 async def kick_oauth_callback(request: Request, code: str, state: str):
     if not code:
         raise HTTPException(status_code=400, detail="Missing authorization code")
@@ -83,10 +83,22 @@ async def kick_oauth_callback(request: Request, code: str, state: str):
 
         # Save credentials to session
         credentials = response.json()
+        if not credentials:
+            raise HTTPException(status_code=400, detail="No credentials found")
+
+        # Store credentials without overwriting other services' data
         request.session["kick_credentials"] = credentials
 
-        # Return the credentials or redirect to home page
-        return credentials
+        return RedirectResponse(url="http://localhost:3000", status_code=302)
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# Add a clear endpoint for consistency
+@router.get("/clear")
+async def clear_credentials(request: Request):
+    """Clear credentials from session"""
+    if "kick_credentials" in request.session:
+        request.session.pop("kick_credentials", None)
+    return {"message": "Kick credentials have been cleared"}

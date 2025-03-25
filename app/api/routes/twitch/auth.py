@@ -14,8 +14,8 @@ router = APIRouter()
 VALID_STATES = set()
 
 
-@router.get("/")
-async def index():
+@router.get("/authenticated")
+async def index(request: Request):
     """
     Initiates the Twitch OAuth client credentials flow.
 
@@ -28,6 +28,9 @@ async def index():
     Raises:
         HTTPException: If the state is invalid or missing.
     """
+    if request.session.get("twitch_credentials"):
+        return request.session["twitch_credentials"]
+
     # Generate access token by following client credentials flow
     token_data = await auth.get_client_credentials_oauth_token()
     access_token = token_data.get("access_token")
@@ -55,7 +58,9 @@ async def twitch_auth():
 
 
 @router.get("/callback")
-async def twitch_callback(code: str = None, state: str = None, error: str = None):
+async def twitch_callback(
+    request: Request, code: str = None, state: str = None, error: str = None
+):
     """
     Handles the callback from Twitch OAuth authentication flow.
     """
@@ -125,6 +130,10 @@ async def twitch_callback(code: str = None, state: str = None, error: str = None
             max_age=max_age,
         )
 
+        # Also store in session for consistency with other services
+        if "session" in request.scope:
+            request.session["twitch_credentials"] = token_encoded
+
         return response
 
     except Exception as e:
@@ -146,7 +155,8 @@ async def logout(request: Request):
         key="twitch_auth_token", httponly=True, secure=True, samesite="lax"
     )
 
-    if "session" in request.scope:
-        request.session.clear()
+    # Only clear twitch-related session data
+    if "session" in request.scope and "twitch_credentials" in request.session:
+        request.session.pop("twitch_credentials", None)
 
     return response

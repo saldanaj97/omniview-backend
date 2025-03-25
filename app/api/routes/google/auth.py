@@ -15,7 +15,7 @@ API_SERVICE_NAME = "youtube"
 API_VERSION = "v3"
 
 
-@router.get("/authenticate")
+@router.get("/authenticated")
 async def index(request: Request):
     """Home page with authentication link"""
     if request.session.get("google_credentials"):
@@ -62,6 +62,10 @@ async def oauth2callback(request: Request):
 
     # Store credentials in session
     credentials = flow.credentials
+    if not credentials:
+        raise HTTPException(status_code=400, detail="No credentials found")
+
+    # Store credentials without overwriting other services' data
     request.session["google_credentials"] = credentials_to_dict(credentials)
 
     return RedirectResponse(url="http://localhost:3000", status_code=302)

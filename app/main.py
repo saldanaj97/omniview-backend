@@ -36,15 +36,14 @@ app.add_middleware(
     same_site="lax",
 )
 
+
 # For development only - disable in production
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Routers
 
 # Twitch API routes
-app.include_router(
-    twitch_auth.router, prefix="/api/twitch/auth", tags=["authentication"]
-)
+app.include_router(twitch_auth.router, prefix="/api/twitch", tags=["authentication"])
 app.include_router(twitch_users.router, prefix="/api/twitch/user", tags=["users"])
 app.include_router(twitch_public.router, prefix="/api/twitch/public", tags=["public"])
 
