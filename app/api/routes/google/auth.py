@@ -68,56 +68,32 @@ async def oauth2callback(request: Request):
     if not credentials:
         raise HTTPException(status_code=400, detail="No credentials found")
 
-    response = RedirectResponse(url="http://localhost:3000/auth/success")
-
-    # Set user session cookie - use base64 encoding to avoid escape character issues
-    credentials_json = json.dumps(credentials_to_dict(credentials))
-    credentials_encoded = base64.b64encode(credentials_json.encode("utf-8")).decode(
-        "utf-8"
-    )
-
-    # Store credentials without overwriting other services' data
-    response.set_cookie(
-        key="google_session",
-        value=credentials_encoded,
-        httponly=True,
-        samesite="lax",
-    )
-
     # Store the credentials in the session
     if "session" in request.scope:
         request.session["google_credentials"] = credentials_to_dict(credentials)
 
-    return response
+    return RedirectResponse(url="http://localhost:3000/auth/success", status_code=302)
 
 
-@router.get("/revoke")
-async def revoke(request: Request):
-    """Revoke OAuth token"""
-    if "google_credentials" not in request.session:
-        return {"message": "No credentials to revoke"}
-
-    credentials = google.oauth2.credentials.Credentials(
-        **request.session["google_credentials"]
-    )
-
-    revoke_response = requests.post(
-        "https://oauth2.googleapis.com/revoke",
-        params={"token": credentials.token},
-        headers={"content-type": "application/x-www-form-urlencoded"},
-        timeout=10,
-    )
-
-    if revoke_response.status_code == 200:
-        request.session.pop("google_credentials", None)
-        return {"message": "Credentials successfully revoked"}
-    else:
-        return {"message": f"An error occurred: {revoke_response.text}"}
-
-
-@router.get("/clear")
-async def clear_credentials(request: Request):
-    """Clear credentials from session"""
+@router.get("/logout")
+async def logout(request: Request):
+    """Revoke credentials and clear session"""
     if "google_credentials" in request.session:
-        request.session.pop("google_credentials", None)
-    return {"message": "Credentials have been cleared"}
+        credentials = google.oauth2.credentials.Credentials(
+            **request.session["google_credentials"]
+        )
+
+        revoke_response = requests.post(
+            "https://oauth2.googleapis.com/revoke",
+            params={"token": credentials.token},
+            headers={"content-type": "application/x-www-form-urlencoded"},
+            timeout=10,
+        )
+
+        if revoke_response.status_code == 200:
+            request.session.pop("google_credentials", None)
+            return {"message": "User has been logged out and credentials revoked"}
+        else:
+            return {"error": f"Failed to revoke token: {revoke_response.text}"}
+
+    return {"message": "No credentials found in session"}

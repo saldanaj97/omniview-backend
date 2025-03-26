@@ -1,40 +1,30 @@
-import base64
 import json
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request, Response
 
 import app.services.twitch.user as user
+from app.api.dependencies.twitch_auth import require_twitch_auth
 
 router = APIRouter()
 
 
 @router.get("/following")
-async def get_following(request: Request):
-    token = request.cookies.get("twitch_auth_token")
-    user_session = request.cookies.get("twitch_user_session")
-
-    # Decode auth_token if it exists
-    decoded_auth_token = None
-    if token:
-        try:
-            decoded_auth_token = json.loads(base64.b64decode(token))
-        except:
-            decoded_auth_token = None
-
-    # Decode user_session if it exists
-    logged_in_user = None
-    if user_session:
-        try:
-            logged_in_user = json.loads(base64.b64decode(user_session))
-        except:
-            logged_in_user = None
-
-    access_token = (
-        decoded_auth_token.get("access_token") if decoded_auth_token else None
-    )
-    user_id = logged_in_user.get("user_id") if logged_in_user else None
-
-    following_data = await user.get_user_follows(
-        access_token=access_token, user_id=user_id
-    )
-    return following_data["data"]
+async def get_following(
+    request: Request, auth_data: tuple = Depends(require_twitch_auth)
+):
+    following_data = {}
+    try:
+        decoded_auth_token, logged_in_user = auth_data
+        access_token = decoded_auth_token.get("access_token")
+        user_id = logged_in_user.get("id")
+        following_data = await user.get_user_follows(
+            access_token=access_token, user_id=user_id
+        )
+        return Response(content=json.dumps(following_data["data"]))
+    except Exception as e:
+        return Response(
+            content=json.dumps(
+                {"error": "Failed to get following data", "message": str(e)}
+            ),
+            status_code=500,
+        )

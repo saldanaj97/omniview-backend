@@ -1,3 +1,4 @@
+import logging
 import os
 
 from fastapi import FastAPI
@@ -22,7 +23,7 @@ app = FastAPI(
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins (CHANGE IN PRODUCTION)
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -36,6 +37,11 @@ app.add_middleware(
     same_site="lax",
 )
 
+# Configure logging
+# logging.basicConfig(
+#     level=logging.DEBUG,
+#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+# )
 
 # For development only - disable in production
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
@@ -44,7 +50,7 @@ os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Twitch API routes
 app.include_router(twitch_auth.router, prefix="/api/twitch", tags=["authentication"])
-app.include_router(twitch_users.router, prefix="/api/twitch/user", tags=["users"])
+app.include_router(twitch_users.router, prefix="/api/twitch", tags=["users"])
 app.include_router(twitch_public.router, prefix="/api/twitch/public", tags=["public"])
 
 # Google API routes

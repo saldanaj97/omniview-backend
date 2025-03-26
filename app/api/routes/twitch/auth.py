@@ -1,6 +1,3 @@
-import base64
-import json
-
 from fastapi import APIRouter, Request, Response
 from fastapi.responses import RedirectResponse
 
@@ -29,7 +26,7 @@ async def index(request: Request):
         HTTPException: If the state is invalid or missing.
     """
     if request.session.get("twitch_credentials"):
-        return request.session["twitch_credentials"]
+        return Response(status_code=200)
 
     # Generate access token by following client credentials flow
     token_data = await auth.get_client_credentials_oauth_token()
@@ -84,57 +81,24 @@ async def twitch_callback(
     try:
         # Exchange code for token
         token_data = await auth.get_oauth_token(code)
-        access_token = token_data.get("access_token")
-        refresh_token = token_data.get("refresh_token")
-        max_age = token_data.get("expires_in", 3600)
 
+        # Store user profile in a db
         # Get user profile
+        access_token = token_data.get("access_token")
         user_profile = await user.get_user_profile(access_token)
         if not user_profile:
             return RedirectResponse(
                 url="http://localhost:3000?error=invalid_access_token"
             )
 
-        # Prepare response with redirect
-        response = RedirectResponse(url="http://localhost:3000/auth/success")
-
-        # Set user session cookie - use base64 encoding to avoid escape character issues
-        user_data = {
-            "user_id": user_profile.get("id"),
-            "display_name": user_profile.get("display_name"),
-            "profile_image_url": user_profile.get("profile_image_url"),
-        }
-        user_json = json.dumps(user_data)
-        user_encoded = base64.b64encode(user_json.encode("utf-8")).decode("utf-8")
-
-        response.set_cookie(
-            key="twitch_user_session",
-            value=user_encoded,
-            httponly=True,
-            secure=True,
-            samesite="lax",
-            max_age=max_age,
-        )
-
-        # Set auth tokens cookie - use base64 encoding to avoid escape character issues
-        token_data = {"access_token": access_token, "refresh_token": refresh_token}
-        token_json = json.dumps(token_data)
-        token_encoded = base64.b64encode(token_json.encode("utf-8")).decode("utf-8")
-
-        response.set_cookie(
-            key="twitch_auth_token",
-            value=token_encoded,
-            httponly=True,
-            secure=True,
-            samesite="lax",
-            max_age=max_age,
-        )
-
-        # Also store in session for consistency with other services
+        # Store user profile in session and also store credentials in session for consistency with other services
         if "session" in request.scope:
-            request.session["twitch_credentials"] = token_encoded
+            request.session["twitch_user_profile"] = user_profile
+            request.session["twitch_credentials"] = token_data
 
-        return response
+        return RedirectResponse(
+            url="http://localhost:3000/auth/success", status_code=302
+        )
 
     except Exception as e:
         return RedirectResponse(url=f"http://localhost:3000?error={str(e)}")
@@ -146,14 +110,6 @@ async def logout(request: Request):
     Logout an authenticated user by clearing cookies.
     """
     response = Response(content="Logged out successfully.")
-
-    # Clear both cookies
-    response.delete_cookie(
-        key="twitch_user_session", httponly=True, secure=True, samesite="lax"
-    )
-    response.delete_cookie(
-        key="twitch_auth_token", httponly=True, secure=True, samesite="lax"
-    )
 
     # Only clear twitch-related session data
     if "session" in request.scope and "twitch_credentials" in request.session:
