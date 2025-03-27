@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
+from app.api.routes import auth_status
 from app.api.routes.google import auth as google_auth
 from app.api.routes.google import subscriptions as google_subscriptions
 from app.api.routes.kick import auth as kick_auth
@@ -47,6 +48,9 @@ app.add_middleware(
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 
 # Routers
+
+# Gloabl Routes
+app.include_router(auth_status.router, prefix="/api/auth", tags=["authentication"])
 
 # Twitch API routes
 app.include_router(twitch_auth.router, prefix="/api/twitch", tags=["authentication"])
