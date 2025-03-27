@@ -1,6 +1,6 @@
 import json
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Response
 
 import app.services.twitch.user as user
 from app.api.dependencies.twitch_auth import require_twitch_auth
@@ -9,9 +9,7 @@ router = APIRouter()
 
 
 @router.get("/following")
-async def get_following(
-    request: Request, auth_data: tuple = Depends(require_twitch_auth)
-):
+async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
     following_data = {}
     try:
         decoded_auth_token, logged_in_user = auth_data
@@ -21,7 +19,7 @@ async def get_following(
             access_token=access_token, user_id=user_id
         )
         return Response(content=json.dumps(following_data["data"]))
-    except Exception as e:
+    except (ValueError, KeyError, TypeError) as e:
         return Response(
             content=json.dumps(
                 {"error": "Failed to get following data", "message": str(e)}
