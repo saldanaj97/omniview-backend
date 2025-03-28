@@ -1,5 +1,6 @@
 import googleapiclient.discovery
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
+from fastapi.responses import JSONResponse
 
 from app.api.dependencies.youtube_auth import require_google_auth
 from app.core.config import GOOGLE_API_SERVICE_NAME, GOOGLE_API_VERSION
@@ -29,12 +30,12 @@ async def get_subscriptions(credentials=Depends(require_google_auth)):
             all_subscriptions, live_statuses
         )
 
-        return live_subscriptions
+        return JSONResponse(content={"data": live_subscriptions})
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail={
-                "error": "Failed to fetch subscriptions",
+        return JSONResponse(
+            content={
+                "error": "Failed to get subscriptions that are currently live.",
                 "message": str(e),
             },
-        ) from e
+            status_code=500,
+        )
