@@ -26,7 +26,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 TWITCH_SCOPES = "user:read:follows"
 
 # Google OAuth configuration
-GOOGLE_CLIENT_SECRET = json.loads(os.getenv("GOOGLE_CLIENT_SECRET_JSON"))
+GOOGLE_CLIENT_SECRET = json.loads(os.getenv("GOOGLE_CLIENT_SECRET_JSON", "{}"))
 
 # Google API scopes and config to request
 GOOGLE_SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
