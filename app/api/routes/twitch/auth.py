@@ -26,12 +26,21 @@ async def index(request: Request):
         HTTPException: If the state is invalid or missing.
     """
     if request.session.get("twitch_credentials"):
-        return Response(status_code=200)
+        # Check if the token is still valid, refresh if needed
+        if await auth.ensure_valid_token(request):
+            credentials = request.session["twitch_credentials"]
+            return {
+                "access_token": credentials.get("access_token"),
+                "expires_in": credentials.get("expires_in"),
+            }
 
     # Generate access token by following client credentials flow
     token_data = await auth.get_client_credentials_oauth_token()
     access_token = token_data.get("access_token")
     expires_in = token_data.get("expires_in")
+
+    # Store in session for future use
+    request.session["twitch_credentials"] = token_data
 
     return {"access_token": access_token, "expires_in": expires_in}
 
@@ -82,7 +91,6 @@ async def twitch_callback(
         # Exchange code for token
         token_data = await auth.get_oauth_token(code)
 
-        # Store user profile in a db
         # Get user profile
         access_token = token_data.get("access_token")
         user_profile = await user.get_user_profile(access_token)
@@ -91,7 +99,6 @@ async def twitch_callback(
                 url="http://localhost:3000?error=invalid_access_token"
             )
 
-        # Store user profile in session and also store credentials in session for consistency with other services
         if "session" in request.scope:
             request.session["twitch_user_profile"] = user_profile
             request.session["twitch_credentials"] = token_data
