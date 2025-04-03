@@ -1,9 +1,36 @@
 from typing import Dict, List
 
-import fastapi
 import httpx
+from fastapi import HTTPException, Request
 
 from app.core.config import TWITCH_CLIENT_ID
+
+
+async def check_public_login_status(request: Request) -> Dict:
+    """
+    Public endpoint to check which platforms have access tokens available.
+    This is used for public access without requiring a session.
+    """
+    if not request.session.get("twitch_public_credentials"):
+        return {
+            "data": [
+                {
+                    "platform": "Twitch",
+                    "accessTokenAvailable": False,
+                }
+            ],
+            "error": None,
+        }
+
+    return {
+        "data": [
+            {
+                "platform": "Twitch",
+                "accessTokenAvailable": True,
+            }
+        ],
+        "error": None,
+    }
 
 
 async def get_top_streams(access_token) -> List[Dict]:
@@ -31,6 +58,4 @@ async def get_top_streams(access_token) -> List[Dict]:
         return response.json()
     except Exception as e:
         print(f"Error fetching top streams: {e}")
-        raise fastapi.HTTPException(
-            status_code=400, detail="Failed to retrieve top streams"
-        )
+        raise HTTPException(status_code=400, detail="Failed to retrieve top streams")
