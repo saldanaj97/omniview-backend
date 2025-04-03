@@ -29,6 +29,50 @@ async def index(request: Request):
     }
 
 
+@router.get("/oauth/public_token")
+async def kick_public_token(request: Request):
+    """
+    Endpoint to exchange authorization code for access token.
+    This follows the OAuth 2.0 authorization code flow with PKCE.
+    """
+    try:
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": KICK_CLIENT_ID,
+            "client_secret": KICK_CLIENT_SECRET,
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                KICK_ENDPOINTS["tokenUrl"],
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                data=data,
+            )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Failed to get token: {response.text}",
+            )
+
+            # Save credentials to session
+        credentials = response.json()
+        if not credentials:
+            raise HTTPException(
+                status_code=400, detail="No public app access token credentials found"
+            )
+
+        # Store the credentials in the session
+        if "session" in request.scope:
+            request.session["kick_public_credentials"] = credentials
+
+        # Return the token response directly
+        return response.json()
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
 @router.get("/oauth")
 async def kick_oauth_redirect():
     code_verifier = generate_code_verifier()
@@ -93,6 +137,56 @@ async def kick_oauth_callback(request: Request, code: str, state: str):
         return RedirectResponse(
             url="http://localhost:3000/auth/success", status_code=302
         )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/oauth/refresh")
+async def kick_refresh_token(request: Request):
+    """
+    Endpoint to refresh an access token using the stored refresh token in the session.
+    """
+    if not request.session.get("kick_credentials"):
+        raise HTTPException(
+            status_code=401,
+            detail="No authenticated session found. Please authenticate first.",
+        )
+
+    credentials = request.session["kick_credentials"]
+    refresh_token = credentials.get("refresh_token")
+
+    if not refresh_token:
+        raise HTTPException(
+            status_code=400, detail="No refresh token found in current session"
+        )
+
+    try:
+        token_params = {
+            "grant_type": "refresh_token",
+            "client_id": KICK_CLIENT_ID,
+            "client_secret": KICK_CLIENT_SECRET,
+            "refresh_token": refresh_token,
+        }
+
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                KICK_ENDPOINTS["tokenURL"],
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+                data=token_params,
+            )
+
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=response.status_code,
+                detail=f"Failed to refresh token: {response.text}",
+            )
+
+        # Update the stored credentials with the new tokens
+        new_credentials = response.json()
+        request.session["kick_credentials"] = new_credentials
+
+        return new_credentials
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
