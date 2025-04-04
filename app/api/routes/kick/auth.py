@@ -44,7 +44,7 @@ async def kick_public_token(request: Request):
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                KICK_ENDPOINTS["tokenUrl"],
+                "https://id.kick.com/oauth/token",
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data=data,
             )
@@ -57,6 +57,7 @@ async def kick_public_token(request: Request):
 
             # Save credentials to session
         credentials = response.json()
+        # Debug log for the response
         if not credentials:
             raise HTTPException(
                 status_code=400, detail="No public app access token credentials found"
@@ -65,9 +66,13 @@ async def kick_public_token(request: Request):
         # Store the credentials in the session
         if "session" in request.scope:
             request.session["kick_public_credentials"] = credentials
+            print(
+                "Stored kick public credentials in session:",
+                request.session["kick_public_credentials"],
+            )
 
         # Return the token response directly
-        return response.json()
+        return credentials
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -115,7 +120,7 @@ async def kick_oauth_callback(request: Request, code: str, state: str):
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                KICK_ENDPOINTS["tokenURL"],
+                "https://id.kick.com/oauth/token",
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data=token_params,
             )
@@ -171,7 +176,7 @@ async def kick_refresh_token(request: Request):
 
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                KICK_ENDPOINTS["tokenURL"],
+                "https://id.kick.com/oauth/token",
                 headers={"Content-Type": "application/x-www-form-urlencoded"},
                 data=token_params,
             )

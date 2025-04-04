@@ -24,6 +24,28 @@ def get_authorization_url(state=None):
     return f"https://id.twitch.tv/oauth2/authorize?{urlencode(params)}"
 
 
+async def get_app_access_token():
+    """
+    Get an app access token using the client credentials grant flow.
+    This is useful for server-to-server requests without user context.
+    """
+    params = {
+        "client_id": config.TWITCH_CLIENT_ID,
+        "client_secret": config.TWITCH_SECRET,
+        "grant_type": "client_credentials",
+    }
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post("https://id.twitch.tv/oauth2/token", data=params)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=400, detail="Failed to retrieve access token")
+
+    token_data = response.json()
+    token_data["last_validated"] = time.time()
+    return token_data
+
+
 async def get_oauth_token(code):
     """Exchange authorization code for OAuth tokens."""
 

@@ -1,6 +1,3 @@
-import base64
-import json
-
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
 import requests

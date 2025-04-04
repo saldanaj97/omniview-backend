@@ -34,7 +34,7 @@ GOOGLE_API_SERVICE_NAME = "youtube"
 GOOGLE_API_VERSION = "v3"
 
 # YouTube API key
-GOOGLE_YOUTUBE_DATA_API_KEY = os.getenv("YOUTUBE_API_KEY")
+YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY", "")
 
 # Kick Configuration
 KICK_CLIENT_ID = os.getenv("KICK_CLIENT_ID")

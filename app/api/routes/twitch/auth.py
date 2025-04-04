@@ -45,6 +45,41 @@ async def index(request: Request):
     return {"access_token": access_token, "expires_in": expires_in}
 
 
+@router.get("/oauth/public_token")
+async def app_access_token(request: Request):
+    """
+    Endpoint to exchange authorization code for access token.
+    This follows the OAuth 2.0 authorization code flow.
+
+    Returns:
+        dict: Contains the access token and expiration time.
+
+    Raises:
+        HTTPException: If there is an error in obtaining the token.
+    """
+    if request.session.get("twitch_public_credentials"):
+        # Ensure the token is valid
+        if await auth.ensure_valid_token(request):
+            credentials = request.session["twitch_public_credentials"]
+            request.session["twitch_public_credentials"] = credentials
+            return {
+                "access_token": credentials.get("access_token"),
+                "expires_in": credentials.get("expires_in"),
+                "token_type": credentials.get("token_type", "Bearer"),
+            }
+
+    # Fallback to client credentials flow if no session data found
+    token_data = await auth.get_app_access_token()
+    if "session" in request.scope:
+        request.session["twitch_public_credentials"] = token_data
+
+    return {
+        "access_token": token_data.get("access_token"),
+        "expires_in": token_data.get("expires_in"),
+        "token_type": token_data.get("token_type", "Bearer"),
+    }
+
+
 @router.get("/login")
 async def twitch_auth():
     """

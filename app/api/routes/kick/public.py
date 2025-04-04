@@ -22,7 +22,7 @@ async def top_streams(request: Request):
                 headers={
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Authorization": (
-                        f"Bearer {request.session['kick_credentials'].get('access_token')}"
+                        f"Bearer {request.session['kick_public_credentials'].get('access_token')}"
                     ),
                 },
             )

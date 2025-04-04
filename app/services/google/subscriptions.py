@@ -4,7 +4,7 @@ import re
 import httpx
 from bs4 import BeautifulSoup
 
-from app.core.config import GOOGLE_YOUTUBE_DATA_API_KEY
+from app.core.config import YOUTUBE_API_KEY
 
 
 async def check_multiple_channels_live_status(channel_ids):
@@ -117,7 +117,7 @@ async def fetch_video_details(video_id, client):
     This function makes a GET request to the YouTube API to retrieve specific
     details (liveStreamingDetails and snippet) for a given video ID.
     """
-    youtube_url = f"https://www.googleapis.com/youtube/v3/videos?key={GOOGLE_YOUTUBE_DATA_API_KEY}&part=liveStreamingDetails,snippet&id={video_id}"
+    youtube_url = f"https://www.googleapis.com/youtube/v3/videos?key={YOUTUBE_API_KEY}&part=liveStreamingDetails,snippet&id={video_id}"
     response = await client.get(youtube_url, timeout=10.0)
     return response.json()
 
