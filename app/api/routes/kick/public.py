@@ -9,10 +9,10 @@ async def top_streams(request: Request):
     """
     Endpoint to get top streams from Kick.
     """
-    if not request.session.get("kick_credentials"):
+    if not request.session.get("kick_public_credentials"):
         raise HTTPException(
             status_code=401,
-            detail="No valid app access token found.",
+            detail="No access token found for Kick.",
         )
 
     try:

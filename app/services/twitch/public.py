@@ -33,7 +33,7 @@ async def check_public_login_status(request: Request) -> Dict:
     }
 
 
-async def get_top_streams(access_token) -> List[Dict]:
+async def get_top_streams(request: Request) -> List[Dict]:
     """
     Get the list of users that the specified user is following
 
@@ -44,9 +44,16 @@ async def get_top_streams(access_token) -> List[Dict]:
     Returns:
         A list of users that the specified user is following
     """
+
+    if not request.session.get("twitch_public_credentials"):
+        raise HTTPException(
+            status_code=401,
+            detail="No access token found for Twitch.",
+        )
+
     headers = {
         "Client-ID": TWITCH_CLIENT_ID,
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {request.session['twitch_public_credentials'].get('access_token')}",
     }
 
     try:
@@ -57,5 +64,6 @@ async def get_top_streams(access_token) -> List[Dict]:
             )
         return response.json()
     except Exception as e:
-        print(f"Error fetching top streams: {e}")
-        raise HTTPException(status_code=400, detail="Failed to retrieve top streams")
+        raise HTTPException(
+            status_code=400, detail="Failed to retrieve top streams"
+        ) from e
