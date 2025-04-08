@@ -8,3 +8,6 @@ ENV/
 .idea
 .DS_Store
 .vscode
+
+# Redis dump file
+dump.rdb
