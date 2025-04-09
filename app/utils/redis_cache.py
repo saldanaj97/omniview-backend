@@ -23,7 +23,7 @@ async def get_cache(key: str) -> Optional[Union[Dict, list]]:
     if cached_data:
         print(f"Cache hit for key: {key}")
         return json.loads(cached_data)
-    print(f"Cache miss for key: {key}")
+    logger.info(f"Cache miss for key: {key}")
     return None
 
 
