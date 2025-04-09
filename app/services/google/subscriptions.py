@@ -131,7 +131,8 @@ def extract_video_metadata(item, channel_data):
     the video title, best available thumbnail URL, and livestreaming details if available.
     """
     # Add title
-    channel_data["title"] = item["snippet"]["title"]
+    channel_data["title"] = item["snippet"].get("title", None)
+    channel_data["language"] = item["snippet"].get("defaultAudioLanguage", None)
 
     # Select best available thumbnail
     thumbnails = item["snippet"]["thumbnails"]

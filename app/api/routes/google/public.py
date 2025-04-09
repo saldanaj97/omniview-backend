@@ -84,10 +84,10 @@ async def top_streams():
                 ]
             }
 
-            # Get the viewer count and live chat ID using the video ID and client
+            # Get the viewer count, live chat ID and language
             for livestream in transformed_data["data"]:
                 video_id = livestream["id"]
-                viewer_count_url = f"https://youtube.googleapis.com/youtube/v3/videos?part=liveStreamingDetails&id={video_id}&key={YOUTUBE_API_KEY}"
+                viewer_count_url = f"https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CliveStreamingDetails&id={video_id}&key={YOUTUBE_API_KEY}"
                 viewer_count_response = await client.get(viewer_count_url)
                 if viewer_count_response.status_code == 200:
                     viewer_count_data = viewer_count_response.json()
@@ -102,6 +102,10 @@ async def top_streams():
                             .get("liveStreamingDetails", {})
                             .get("activeLiveChatId", None)
                         )
+                        livestream["language"] = viewer_count_data["items"][0][
+                            "snippet"
+                        ].get("defaultAudioLanguage", None)
+
                 else:
                     logger.error(
                         "Failed to fetch viewer count for video ID %s: %d - %s",
