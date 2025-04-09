@@ -18,7 +18,7 @@ from app.core.redis_client import redis_client
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.ERROR,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ app = FastAPI(
 # Test Redis connection
 try:
     redis_client.ping()
-    logger.info("Redis connection successful")
+    print("Redis connection successful")
 except Exception as e:
     logger.error("Redis connection failed: %s", str(e))
     raise
@@ -64,7 +64,7 @@ app.include_router(auth_status.router, prefix="/api/auth", tags=["authentication
 
 # Debug routes (only in debug mode)
 if os.getenv("DEBUG", "False") == "True":
-    logger.info("Debug mode enabled - registering debug endpoints")
+    print("Debug mode enabled - registering debug endpoints")
     app.include_router(debug.router, prefix="/api/debug", tags=["debug"])
 
 # Twitch API routes
@@ -84,5 +84,10 @@ app.include_router(kick_public.router, prefix="/api/kick/public", tags=["public"
 if __name__ == "__main__":
     import uvicorn
 
-    logger.info("Starting server")
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    print("Starting server")
+    uvicorn.run(
+        "app.main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+    )

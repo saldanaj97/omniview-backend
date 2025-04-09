@@ -102,10 +102,19 @@ async def ensure_valid_token(request):
     Returns True if a valid token is available, False otherwise.
     Validates tokens on an hourly basis as required by Twitch API docs.
     """
-    if "session" not in request.scope or "twitch_credentials" not in request.session:
+    credentials_key = None
+
+    # Check which credentials we're dealing with
+    if "session" in request.scope:
+        if "twitch_credentials" in request.session:
+            credentials_key = "twitch_credentials"
+        elif "twitch_public_credentials" in request.session:
+            credentials_key = "twitch_public_credentials"
+
+    if not credentials_key:
         return False
 
-    credentials = request.session["twitch_credentials"]
+    credentials = request.session[credentials_key]
     access_token = credentials.get("access_token")
     refresh_token = credentials.get("refresh_token")
     last_validated = credentials.get("last_validated", 0)
@@ -118,31 +127,28 @@ async def ensure_valid_token(request):
     one_hour_in_seconds = 3600
     force_validation = (current_time - last_validated) >= one_hour_in_seconds
 
-    # If refresh_token is missing or we need to force validation
-    if force_validation or not refresh_token:
+    # If we need to force validation
+    if force_validation:
         is_valid = await validate_access_token(access_token)
         credentials["last_validated"] = current_time
-        request.session["twitch_credentials"] = credentials
+        request.session[credentials_key] = credentials
 
-        # Token invalid and no refresh token, return False
-        if is_valid:
-            return True
-        elif not refresh_token:
-            return False
-    elif last_validated > 0:
-        # We have a last_validated time and don't need to force validation
-        return True
+        # If token is invalid and we have a refresh token, try to refresh
+        if not is_valid and refresh_token:
+            try:
+                new_token_data = await refresh_oauth_token(refresh_token)
+                new_token_data["last_validated"] = current_time
+                request.session[credentials_key] = new_token_data
+                return True
+            except HTTPException:
+                # If refresh fails, clear credentials and return False
+                request.session.pop(credentials_key, None)
+                return False
 
-    # Token is invalid or we need to refresh, try to refresh
-    try:
-        new_token_data = await refresh_oauth_token(refresh_token)
-        new_token_data["last_validated"] = current_time
-        request.session["twitch_credentials"] = new_token_data
-        return True
-    except HTTPException:
-        # If refresh fails, clear credentials and return False
-        request.session.pop("twitch_credentials", None)
-        return False
+        return is_valid
+
+    # If we don't need to force validation, assume the token is valid
+    return True
 
 
 async def verify_token(request: Request):

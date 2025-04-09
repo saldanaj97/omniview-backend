@@ -18,12 +18,12 @@ async def get_cache(key: str) -> Optional[Union[Dict, list]]:
     Returns:
         The cached data if found, otherwise None
     """
-    logger.debug("Attempting to get from cache: %s", key)
+    print("Attempting to get from cache: ", key)
     cached_data = redis_client.get(key)
     if cached_data:
-        logger.debug("Cache hit for key: %s", key)
+        print(f"Cache hit for key: {key}")
         return json.loads(cached_data)
-    logger.debug("Cache miss for key: %s", key)
+    print(f"Cache miss for key: {key}")
     return None
 
 
@@ -40,11 +40,9 @@ async def set_cache(key: str, data: Union[Dict, list], expiration: int = 300) ->
         Boolean indicating success
     """
     try:
-        logger.debug(
-            "Setting cache for key: %s (expiration: %d seconds)", key, expiration
-        )
+        print(f"Setting cache for key: {key} (expiration: %d seconds) {expiration}")
         redis_client.setex(key, expiration, json.dumps(data))
-        logger.debug("Successfully set cache for key: %s", key)
+        print(f"Successfully set cache for key: {key}")
         return True
     except Exception as e:
         logger.error("Failed to set cache for key %s: %s", key, str(e))
@@ -58,11 +56,11 @@ async def clear_cache(pattern: str) -> None:
     Args:
         pattern: Redis key pattern to match (e.g., 'twitch:*')
     """
-    logger.info("Clearing cache for pattern: %s", pattern)
+    print(f"Clearing cache for pattern: {pattern}")
     keys = redis_client.keys(pattern)
     if keys:
-        logger.info("Found %d keys to delete", len(keys))
+        print(f"Found {len(keys)} keys to delete")
         redis_client.delete(*keys)
-        logger.info("Successfully deleted %d keys", len(keys))
+        print(f"Successfully deleted {len(keys)} keys")
     else:
-        logger.info("No keys found matching pattern: %s", pattern)
+        print(f"No keys found matching pattern: {pattern}")

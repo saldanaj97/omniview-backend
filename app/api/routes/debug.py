@@ -16,9 +16,9 @@ async def get_cache_keys(pattern: str = "*"):
     Debug endpoint to get all Redis cache keys matching a pattern
     """
     try:
-        logger.info("Finding cache keys matching pattern: %s", pattern)
+        print("Finding cache keys matching pattern:", pattern)
         keys = redis_client.keys(pattern)
-        logger.info("Found %d keys matching pattern '%s'", len(keys), pattern)
+        print(f"Found {len(keys)}, keys matching pattern {pattern}")
         return {"keys": keys, "count": len(keys)}
     except Exception as e:
         logger.error("Error getting cache keys: %s", str(e))
@@ -31,12 +31,12 @@ async def get_cache_value(key: str):
     Debug endpoint to get a specific Redis cache value
     """
     try:
-        logger.info("Attempting to get cache value for key: %s", key)
+        print("Attempting to get cache value for key: ", key)
         value = redis_client.get(key)
         if value:
-            logger.info("Cache hit for key: %s", key)
+            print("Cache hit for key: ", key)
             return {"key": key, "value": value}
-        logger.info("Cache miss for key: %s", key)
+        print("Cache miss for key: ", key)
         return {"key": key, "value": None}
     except Exception as e:
         logger.error("Error getting cache value: %s", str(e))
@@ -49,9 +49,9 @@ async def flush_cache():
     Debug endpoint to flush all Redis cache
     """
     try:
-        logger.info("Flushing Redis cache")
+        print("Flushing Redis cache")
         redis_client.flushdb()
-        logger.info("Cache flushed successfully")
+        print("Cache flushed successfully")
         return {"message": "Cache flushed successfully"}
     except Exception as e:
         logger.error("Error flushing cache: %s", str(e))

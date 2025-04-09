@@ -1,10 +1,14 @@
-from fastapi import APIRouter, Request, Response
+import logging
+
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import RedirectResponse
 
+from app.core.redis_client import get_token_data, set_token_data
 from app.core.security import generate_state_token
 from app.services.twitch import auth, user
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Keep track of valid states in memory (not ideal for production with multiple servers)
 # But works fine for development and single-server deployments
@@ -158,3 +162,94 @@ async def logout(request: Request):
         request.session.pop("twitch_credentials", None)
 
     return response
+
+
+@router.get("/oauth/refresh")
+async def refresh_token(request: Request):
+    """
+    Refresh the user's Twitch access token if needed.
+    Uses Redis for token storage.
+    """
+    if "session" not in request.scope or "twitch_credentials" not in request.session:
+        raise HTTPException(
+            status_code=401,
+            detail={
+                "message": "Not authenticated with Twitch",
+                "refreshed": False,
+                "platform": "twitch",
+            },
+        )
+
+    try:
+        # Get user ID from Twitch user profile
+        twitch_user_profile = request.session.get("twitch_user_profile", {})
+        if not twitch_user_profile:
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "message": "No user profile found in session",
+                    "refreshed": False,
+                    "platform": "twitch",
+                },
+            )
+        user_id = twitch_user_profile.get("id", "")
+
+        # Try to get token from Redis first
+        token_data = await get_token_data(user_id, "twitch")
+
+        # Fall back to session if not in Redis
+        if not token_data:
+            token_data = request.session["twitch_credentials"]
+            # Store in Redis for future use
+            expires_in = token_data.get("expires_in", 3600)
+            await set_token_data(user_id, "twitch", token_data, expires_in)
+
+        user_refresh_token = token_data.get("refresh_token")
+
+        if not user_refresh_token:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "message": "No refresh token available",
+                    "refreshed": False,
+                    "platform": "twitch",
+                },
+            )
+
+        # Check if token needs refreshing
+        access_token = token_data.get("access_token")
+        is_valid = await auth.validate_access_token(access_token)
+
+        if not is_valid:
+            new_token_data = await auth.refresh_oauth_token(user_refresh_token)
+
+            # Ensure the refresh token is included in the new token data
+            # Some OAuth providers don't include the refresh token in refresh responses
+            if "refresh_token" not in new_token_data and user_refresh_token:
+                new_token_data["refresh_token"] = user_refresh_token
+
+            # Save to both Redis and session
+            expires_in = new_token_data.get("expires_in", 3600)
+            await set_token_data(user_id, "twitch", new_token_data, expires_in)
+            request.session["twitch_credentials"] = new_token_data
+
+            return {
+                "message": "Token refreshed successfully",
+                "refreshed": True,
+                "expires_in": expires_in,
+                "platform": "twitch",
+            }
+
+        # Token is still valid
+        return {
+            "message": "Token is still valid",
+            "refreshed": False,
+            "expires_in": token_data.get("expires_in"),
+            "platform": "twitch",
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"message": f"Error refreshing token: {str(e)}", "refreshed": False},
+        ) from e
