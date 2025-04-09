@@ -7,16 +7,11 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from google.auth.transport.requests import Request as GoogleAuthRequest
 
-from app.core.config import GOOGLE_CLIENT_SECRET
+from app.core.config import GOOGLE_CLIENT_SECRET, GOOGLE_SCOPES
 from app.services.google.auth import credentials_to_dict
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-# Configuration
-SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
-API_SERVICE_NAME = "youtube"
-API_VERSION = "v3"
 
 
 @router.get("/authenticated")
@@ -35,7 +30,7 @@ async def index(request: Request):
 async def authorize(request: Request):
     """Initiate OAuth flow"""
     flow = google_auth_oauthlib.flow.Flow.from_client_config(
-        GOOGLE_CLIENT_SECRET, scopes=SCOPES
+        GOOGLE_CLIENT_SECRET, scopes=GOOGLE_SCOPES
     )
 
     flow.redirect_uri = str(request.url_for("oauth2callback"))
@@ -56,7 +51,7 @@ async def oauth2callback(request: Request):
         raise HTTPException(status_code=400, detail="State not found in session")
 
     flow = google_auth_oauthlib.flow.Flow.from_client_config(
-        GOOGLE_CLIENT_SECRET, scopes=SCOPES, state=state
+        GOOGLE_CLIENT_SECRET, scopes=GOOGLE_SCOPES, state=state
     )
     flow.redirect_uri = str(request.url_for("oauth2callback"))
 

@@ -149,6 +149,8 @@ def extract_video_metadata(item, channel_data):
         channel_data["live"] = "actualStartTime" in live_details
         if channel_data["live"]:
             channel_data["actualStartTime"] = live_details["actualStartTime"]
+            channel_data["viewer_count"] = live_details.get("concurrentViewers", 0)
+            channel_data["live_chat_id"] = live_details.get("activeLiveChatId", None)
 
     return channel_data
 
