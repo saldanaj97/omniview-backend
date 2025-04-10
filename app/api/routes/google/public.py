@@ -22,13 +22,9 @@ async def top_streams():
     cache_key = "google:public:top_streams"
 
     # Try to get from cache first
-    print("Attempting to fetch YouTube top streams cache -> ", cache_key)
     cached_data = await get_cache(cache_key)
     if cached_data:
-        print("Cache hit for YouTube top streams")
         return cached_data
-
-    print("Cache miss - fetching live top streams from YouTube API")
 
     # Check if API key is configured
     if not YOUTUBE_API_KEY:

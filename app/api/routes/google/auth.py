@@ -135,7 +135,6 @@ async def refresh_token(request: Request):
 
         # Check if expired and refresh if needed
         if credentials.expired:
-            print("Refreshing expired Google token")
             if credentials.refresh_token:
                 request_object = GoogleAuthRequest()
                 credentials.refresh(request_object)

@@ -18,9 +18,7 @@ async def public_check_login_status(request: Request):
     This is used for public access without requiring a session.
     """
     try:
-        print("Checking public login status")
         platform_status = await public.check_public_login_status(request=request)
-        print("Successfully retrieved platform status")
         return platform_status
     except Exception as e:
         logger.error("Failed to check public login status: %s", str(e))
@@ -33,18 +31,14 @@ async def top_streams(request: Request):
     cache_key = "twitch:public:top-streams"
 
     # Try to get from cache first
-    print("Attempting to fetch top streams cache key ->", cache_key)
     cached_data = await get_cache(cache_key)
     if cached_data:
-        print("Cache hit for top streams")
         return cached_data
 
     try:
-        print("Cache miss - fetching live top streams from Twitch")
         popular_streams = await public.get_top_streams(request=request)
         # Cache for 2 minutes (120 seconds) since stream data changes frequently
         await set_cache(cache_key, popular_streams, 120)
-        print("Successfully fetched and cached top streams")
         return popular_streams
     except Exception as e:
         logger.error("Failed to fetch top streams: %s", str(e))

@@ -68,7 +68,8 @@ async def public_check_login_status(request: Request):
         twitch_token_available = bool(request.session.get("twitch_public_credentials"))
         if not twitch_token_available:
             try:
-                await twitch_public_token(request)
+                credentials = await twitch_public_token(request)
+                request.session["twitch_public_credentials"] = credentials
                 twitch_token_available = bool(
                     request.session.get("twitch_public_credentials")
                 )
@@ -79,7 +80,8 @@ async def public_check_login_status(request: Request):
         kick_token_available = bool(request.session.get("kick_public_credentials"))
         if not kick_token_available:
             try:
-                await kick_public_token(request)
+                credentials = await kick_public_token(request)
+                request.session["kick_public_credentials"] = credentials
                 kick_token_available = bool(
                     request.session.get("kick_public_credentials")
                 )

@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 
 # Create a Redis client
 redis_client = redis.from_url(REDIS_URL)
-print(
-    "Redis client initialized with URL: ", REDIS_URL.split("@")[-1]
+logger.info(
+    "Redis client initialized with URL: %s", REDIS_URL.split("@")[-1]
 )  # Logs Redis host without credentials
 
 
@@ -34,9 +34,9 @@ async def set_token_data(
     key = f"token:{platform}:{user_id}"
     try:
         # Store as JSON string
-        print("Setting Redis token data for key: ", key)
+        logger.info("Setting Redis token data for key: %s", key)
         redis_client.setex(key, expiry_seconds, json.dumps(token_data))
-        print(f"Successfully saved token data for {platform} user: {user_id}")
+        logger.info("Successfully saved token data for %s user: %s", platform, user_id)
         return True
     except Exception as e:
         logger.error("Failed to save token data in Redis: %s", str(e))
@@ -56,16 +56,16 @@ async def get_token_data(user_id: str, platform: str) -> Optional[Dict[str, Any]
     """
     key = f"token:{platform}:{user_id}"
     try:
-        print(
-            f"Attempting to retrieve token data for key: {key}",
-        )
+        logger.info("Attempting to retrieve token data for key: %s", key)
         data = redis_client.get(key)
         if data:
-            print(
-                f"Cache HIT: Found token data for {platform} user: {user_id}",
+            logger.info(
+                "Cache HIT: Found token data for %s user: %s", platform, user_id
             )
             return json.loads(data)
-        print(f"Cache MISS: No token data found for {platform} user:  {user_id}")
+        logger.info(
+            "Cache MISS: No token data found for %s user: %s", platform, user_id
+        )
         return None
     except Exception as e:
         logger.error("Error retrieving token data from Redis: %s", str(e))
@@ -76,12 +76,16 @@ async def delete_token_data(user_id: str, platform: str) -> bool:
     """Delete token data from Redis"""
     key = f"token:{platform}:{user_id}"
     try:
-        print(f"Deleting token data for key: {key}")
+        logger.info("Deleting token data for key: %s", key)
         result = redis_client.delete(key)
         if result > 0:
-            print(f"Successfully deleted token data for {platform} user: {user_id}")
+            logger.info(
+                "Successfully deleted token data for %s user: %s", platform, user_id
+            )
         else:
-            print(f"No token data found to delete for {platform} user: {user_id}")
+            logger.info(
+                "No token data found to delete for %s user: %s", platform, user_id
+            )
         return True
     except Exception as e:
         logger.error("Failed to delete token data from Redis: %s", str(e))
@@ -93,7 +97,7 @@ def check_redis_connection() -> bool:
     """Check if Redis connection is working properly"""
     try:
         redis_client.ping()
-        print("Redis connection test: SUCCESS")
+        logger.info("Redis connection test: SUCCESS")
         return True
     except redis.ConnectionError as e:
         logger.error("Redis connection test: FAILED - %s", str(e))

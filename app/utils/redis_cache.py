@@ -1,11 +1,11 @@
 import json
-import logging
 from typing import Any, Dict, Optional, Union
 
 from app.core.redis_client import redis_client
+from app.utils.logging.redis_logger import RedisLogger
 
-# Set up logging
-logger = logging.getLogger(__name__)
+# Set up enhanced Redis logger
+logger = RedisLogger("redis_cache")
 
 
 async def get_cache(key: str) -> Optional[Union[Dict, list]]:
@@ -18,12 +18,12 @@ async def get_cache(key: str) -> Optional[Union[Dict, list]]:
     Returns:
         The cached data if found, otherwise None
     """
-    print("Attempting to get from cache: ", key)
+    logger.info("Attempting to get from cache", key=key)
     cached_data = redis_client.get(key)
     if cached_data:
-        print(f"Cache hit for key: {key}")
+        logger.info("Cache hit", key=key)
         return json.loads(cached_data)
-    logger.info(f"Cache miss for key: {key}")
+    logger.info("Cache miss", key=key)
     return None
 
 
@@ -40,12 +40,12 @@ async def set_cache(key: str, data: Union[Dict, list], expiration: int = 300) ->
         Boolean indicating success
     """
     try:
-        print(f"Setting cache for key: {key} (expiration: %d seconds) {expiration}")
+        logger.info("Setting cache", key=key, expiration=expiration)
         redis_client.setex(key, expiration, json.dumps(data))
-        print(f"Successfully set cache for key: {key}")
+        logger.info("Successfully set cache", key=key)
         return True
     except Exception as e:
-        logger.error("Failed to set cache for key %s: %s", key, str(e))
+        logger.error("Failed to set cache", exception=e, key=key)
         return False
 
 
@@ -56,11 +56,11 @@ async def clear_cache(pattern: str) -> None:
     Args:
         pattern: Redis key pattern to match (e.g., 'twitch:*')
     """
-    print(f"Clearing cache for pattern: {pattern}")
+    logger.info("Clearing cache", pattern=pattern)
     keys = redis_client.keys(pattern)
     if keys:
-        print(f"Found {len(keys)} keys to delete")
+        logger.info("Found keys to delete", count=len(keys))
         redis_client.delete(*keys)
-        print(f"Successfully deleted {len(keys)} keys")
+        logger.info("Successfully deleted keys", count=len(keys))
     else:
-        print(f"No keys found matching pattern: {pattern}")
+        logger.info("No keys found matching pattern", pattern=pattern)

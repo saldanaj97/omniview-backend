@@ -51,5 +51,4 @@ async def get_user_follows(access_token: str, user_id: str) -> List[Dict]:
             )
         return response.json()
     except Exception as e:
-        print(f"Error fetching users followed streamers: {e}")
         raise HTTPException(status_code=400, detail="Failed to retrieve top streams")

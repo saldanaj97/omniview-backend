@@ -13,7 +13,7 @@ from app.core.config import (
     KICK_SCOPES,
 )
 from app.core.security import generate_code_challenge, generate_code_verifier
-from app.services.twitch.auth import get_twitch_public_access_token
+from app.services.kick import auth
 
 router = APIRouter()
 
@@ -37,20 +37,9 @@ async def kick_public_token(request: Request):
     This follows the OAuth 2.0 authorization code flow with PKCE.
     """
     try:
-        credentials = await get_twitch_public_access_token()
-        if "session" in request.scope:
-            request.session["kick_public_credentials"] = credentials
-        else:
-            raise HTTPException(
-                status_code=401,
-                detail="No authenticated session found. Please authenticate first.",
-            )
-
-        return {
-            "access_token": credentials.get("access_token"),
-            "expires_in": credentials.get("expires_in"),
-            "token_type": credentials.get("token_type", "Bearer"),
-        }
+        credentials = await auth.get_kick_public_access_token()
+        request.session["kick_public_credentials"] = credentials
+        return credentials
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

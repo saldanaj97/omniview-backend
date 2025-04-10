@@ -20,23 +20,18 @@ async def top_streams(request: Request):
     cache_key = "kick:public:top_streams"
 
     # Try to get from cache first
-    print("Attempting to fetch top streams from Kick -> cache key:", cache_key)
     cached_data = await get_cache(cache_key)
     if cached_data:
-        print("Cache hit for Kick top streams")
         return cached_data
 
-    print("Cache miss for Kick top streams")
-
     if not request.session.get("kick_public_credentials"):
-        logger.warning("No Kick credentials found in session")
+        logger.error("No Kick credentials found in session")
         raise HTTPException(
             status_code=401,
             detail="No access token found for Kick.",
         )
 
     try:
-        print("Fetching live top streams from Kick API")
         async with httpx.AsyncClient() as client:
             response = await client.get(
                 "https://api.kick.com/public/v1/livestreams",
@@ -54,13 +49,10 @@ async def top_streams(request: Request):
                 status_code=response.status_code,
                 detail=f"Failed to retrieve top streams: {response.text}",
             )
-
-        print("Successfully retrieved data from Kick API")
         response_data = response.json()
 
         # Cache for 2 minutes (120 seconds) since stream data changes frequently
         success = await set_cache(cache_key, response_data, 120)
-        print("Successfully fetched and cached Kick top streams")
         return response_data
 
     except Exception as e:

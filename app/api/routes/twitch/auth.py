@@ -64,19 +64,8 @@ async def twitch_public_token(request: Request):
 
     try:
         credentials = await auth.get_twitch_public_access_token()
-        if "session" in request.scope:
-            request.session["twitch_public_credentials"] = credentials
-        else:
-            raise HTTPException(
-                status_code=401,
-                detail="No authenticated session found. Please authenticate first.",
-            )
-
-        return {
-            "access_token": credentials.get("access_token"),
-            "expires_in": credentials.get("expires_in"),
-            "token_type": credentials.get("token_type", "Bearer"),
-        }
+        request.session["twitch_public_credentials"] = credentials
+        return credentials
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
