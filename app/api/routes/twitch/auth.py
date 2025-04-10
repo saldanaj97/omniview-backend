@@ -104,7 +104,7 @@ async def twitch_auth():
 
 @router.get("/callback")
 async def twitch_callback(
-    request: Request, code: str = None, state: str = None, error: str = None
+    request: Request, code: str = "", state: str = "", error: str = ""
 ):
     """
     Handles the callback from Twitch OAuth authentication flow.
