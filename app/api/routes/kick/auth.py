@@ -13,6 +13,7 @@ from app.core.config import (
     KICK_SCOPES,
 )
 from app.core.security import generate_code_challenge, generate_code_verifier
+from app.services.twitch.auth import get_twitch_public_access_token
 
 router = APIRouter()
 
@@ -36,39 +37,20 @@ async def kick_public_token(request: Request):
     This follows the OAuth 2.0 authorization code flow with PKCE.
     """
     try:
-        data = {
-            "grant_type": "client_credentials",
-            "client_id": KICK_CLIENT_ID,
-            "client_secret": KICK_CLIENT_SECRET,
-        }
-
-        async with httpx.AsyncClient() as client:
-            response = await client.post(
-                "https://id.kick.com/oauth/token",
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-                data=data,
-            )
-
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"Failed to get token: {response.text}",
-            )
-
-            # Save credentials to session
-        credentials = response.json()
-        # Debug log for the response
-        if not credentials:
-            raise HTTPException(
-                status_code=400, detail="No public app access token credentials found"
-            )
-
-        # Store the credentials in the session
+        credentials = await get_twitch_public_access_token()
         if "session" in request.scope:
             request.session["kick_public_credentials"] = credentials
+        else:
+            raise HTTPException(
+                status_code=401,
+                detail="No authenticated session found. Please authenticate first.",
+            )
 
-        # Return the token response directly
-        return credentials
+        return {
+            "access_token": credentials.get("access_token"),
+            "expires_in": credentials.get("expires_in"),
+            "token_type": credentials.get("token_type", "Bearer"),
+        }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

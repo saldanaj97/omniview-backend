@@ -61,27 +61,24 @@ async def twitch_public_token(request: Request):
     Raises:
         HTTPException: If there is an error in obtaining the token.
     """
-    if request.session.get("twitch_public_credentials"):
-        # Ensure the token is valid
-        if await auth.ensure_valid_token(request):
-            credentials = request.session["twitch_public_credentials"]
+
+    try:
+        credentials = await auth.get_twitch_public_access_token()
+        if "session" in request.scope:
             request.session["twitch_public_credentials"] = credentials
-            return {
-                "access_token": credentials.get("access_token"),
-                "expires_in": credentials.get("expires_in"),
-                "token_type": credentials.get("token_type", "Bearer"),
-            }
+        else:
+            raise HTTPException(
+                status_code=401,
+                detail="No authenticated session found. Please authenticate first.",
+            )
 
-    # Fallback to client credentials flow if no session data found
-    token_data = await auth.get_app_access_token()
-    if "session" in request.scope:
-        request.session["twitch_public_credentials"] = token_data
-
-    return {
-        "access_token": token_data.get("access_token"),
-        "expires_in": token_data.get("expires_in"),
-        "token_type": token_data.get("token_type", "Bearer"),
-    }
+        return {
+            "access_token": credentials.get("access_token"),
+            "expires_in": credentials.get("expires_in"),
+            "token_type": credentials.get("token_type", "Bearer"),
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/login")
