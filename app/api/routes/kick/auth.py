@@ -66,10 +66,6 @@ async def kick_public_token(request: Request):
         # Store the credentials in the session
         if "session" in request.scope:
             request.session["kick_public_credentials"] = credentials
-            print(
-                "Stored kick public credentials in session:",
-                request.session["kick_public_credentials"],
-            )
 
         # Return the token response directly
         return credentials
