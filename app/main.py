@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.api.routes import auth_status, debug
+from app.api.routes import debug, public_auth
 from app.api.routes.google import auth as google_auth
 from app.api.routes.google import public as google_public
 from app.api.routes.google import subscriptions as google_subscriptions
@@ -74,7 +74,7 @@ if os.getenv("DEBUG", "False") == "True":
 # Routers
 
 # Global Routes
-app.include_router(auth_status.router, prefix="/api/auth", tags=["authentication"])
+app.include_router(public_auth.router, prefix="/api/auth", tags=["authentication"])
 
 # Twitch API routes
 app.include_router(twitch_auth.router, prefix="/api/twitch", tags=["authentication"])

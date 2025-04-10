@@ -1,8 +1,11 @@
+import logging
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
+from app.api.routes.kick.auth import kick_public_token
+from app.api.routes.twitch.auth import twitch_public_token
 from app.core.config import YOUTUBE_API_KEY
 
 router = APIRouter()
@@ -56,26 +59,48 @@ async def public_check_login_status(request: Request):
     """
     Public endpoint to check which platforms have access tokens available.
     This is used for public access without requiring a session.
+
+    If Twitch or Kick tokens are not available, this endpoint will attempt
+    to generate them using the respective public token endpoints.
     """
-    # For Youtube, we can check the GOOGLE_YOUTUBE_DATA_API_KEY directly since it is a static API key.
-    # For Twitch and Kick, we will check the session for public credentials if available.
     try:
+        # Check if Twitch public token is available, if not, try to generate it
+        twitch_token_available = bool(request.session.get("twitch_public_credentials"))
+        if not twitch_token_available:
+            try:
+                await twitch_public_token(request)
+                twitch_token_available = bool(
+                    request.session.get("twitch_public_credentials")
+                )
+            except Exception as e:
+                logging.error("Failed to generate Twitch public token: %s", str(e))
+
+        # Check if Kick public token is available, if not, try to generate it
+        kick_token_available = bool(request.session.get("kick_public_credentials"))
+        if not kick_token_available:
+            try:
+                await kick_public_token(request)
+                kick_token_available = bool(
+                    request.session.get("kick_public_credentials")
+                )
+            except Exception as e:
+                logging.error("Failed to generate Kick public token: %s", str(e))
+
+        # For Youtube, we check the API key directly since it's static
+        youtube_token_available = bool(YOUTUBE_API_KEY)
+
         platforms_status = [
             PublicPlatformAccessTokenResponse(
                 platform="Twitch",
-                accessTokenAvailable=bool(
-                    request.session.get("twitch_public_credentials")
-                ),
+                accessTokenAvailable=twitch_token_available,
             ),
             PublicPlatformAccessTokenResponse(
                 platform="Youtube",
-                accessTokenAvailable=bool(YOUTUBE_API_KEY),
+                accessTokenAvailable=youtube_token_available,
             ),
             PublicPlatformAccessTokenResponse(
                 platform="Kick",
-                accessTokenAvailable=bool(
-                    request.session.get("kick_public_credentials")
-                ),
+                accessTokenAvailable=kick_token_available,
             ),
         ]
 

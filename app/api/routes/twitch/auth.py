@@ -50,7 +50,7 @@ async def index(request: Request):
 
 
 @router.get("/oauth/public_token")
-async def app_access_token(request: Request):
+async def twitch_public_token(request: Request):
     """
     Endpoint to exchange authorization code for access token.
     This follows the OAuth 2.0 authorization code flow.
