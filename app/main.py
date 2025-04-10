@@ -16,15 +16,14 @@ from app.api.routes.twitch import public as twitch_public
 from app.api.routes.twitch import users as twitch_users
 from app.core.config import SECRET_KEY
 from app.core.redis_client import redis_client
+from app.utils.logging import configure_logging
 
 # Ensure SECRET_KEY is not None
 assert SECRET_KEY is not None, "SECRET_KEY must be defined"
 
-# Configure logging
-logging.basicConfig(
-    level=logging.ERROR,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
+# Configure logging with our new system
+debug_mode = os.getenv("DEBUG", "False") == "True"
+
 logger = logging.getLogger(__name__)
 
 # Create FastAPI app
@@ -37,7 +36,7 @@ app = FastAPI(
 # Test Redis connection
 try:
     redis_client.ping()
-    print("Redis connection successful")
+    logger.info("Redis connection successful")
 except Exception as e:
     logger.error("Redis connection failed: %s", str(e))
     raise
@@ -61,8 +60,12 @@ app.add_middleware(
 
 
 # Debug Mode
-if os.getenv("DEBUG", "False") == "True":
-    print("Debug mode enabled - registering debug endpoints")
+if debug_mode:
+    logger.info("Debug mode enabled - registering debug endpoints")
+
+    # Configure logging for debug mode
+    LOG_LEVEL = "DEBUG" if debug_mode else "INFO"
+    configure_logging(log_level=LOG_LEVEL)
 
     # Used to allow insecure transport for OAuth per the youtube data api docs
     # For development only - disable in production
@@ -93,7 +96,7 @@ app.include_router(kick_public.router, prefix="/api/kick/public", tags=["public"
 if __name__ == "__main__":
     import uvicorn
 
-    print("Starting server")
+    logger.info("Starting server")
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
