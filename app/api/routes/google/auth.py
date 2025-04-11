@@ -1,3 +1,4 @@
+import json
 import logging
 
 import google.oauth2.credentials
@@ -71,30 +72,6 @@ async def oauth2callback(request: Request):
     return RedirectResponse(url="http://localhost:3000/auth/success", status_code=302)
 
 
-@router.get("/logout")
-async def logout(request: Request):
-    """Revoke credentials and clear session"""
-    if "google_credentials" in request.session:
-        credentials = google.oauth2.credentials.Credentials(
-            **request.session["google_credentials"]
-        )
-
-        revoke_response = requests.post(
-            "https://oauth2.googleapis.com/revoke",
-            params={"token": credentials.token},
-            headers={"content-type": "application/x-www-form-urlencoded"},
-            timeout=10,
-        )
-
-        if revoke_response.status_code == 200:
-            request.session.pop("google_credentials", None)
-            return {"message": "User has been logged out and credentials revoked"}
-        else:
-            return {"error": f"Failed to revoke token: {revoke_response.text}"}
-
-    return {"message": "No credentials found in session"}
-
-
 @router.get("/oauth/refresh")
 async def refresh_token(request: Request):
     """
@@ -134,37 +111,104 @@ async def refresh_token(request: Request):
         )
 
         # Check if expired and refresh if needed
-        if credentials.expired:
-            if credentials.refresh_token:
-                request_object = GoogleAuthRequest()
-                credentials.refresh(request_object)
+        if credentials.refresh_token:
+            request_object = GoogleAuthRequest()
+            credentials.refresh(request_object)
 
-                # Update the session with the refreshed credentials
-                request.session["google_credentials"] = credentials_to_dict(credentials)
+            # Update the session with the refreshed credentials
+            request.session["google_credentials"] = credentials_to_dict(credentials)
 
-                return {"message": "Token refreshed successfully", "refreshed": True}
-            else:
-                # No refresh token, can't refresh
-                if "google_credentials" in request.session:
-                    request.session.pop("google_credentials")
-                raise HTTPException(
-                    status_code=401,
-                    detail={
-                        "message": "No refresh token available, please login again",
-                        "refreshed": False,
-                    },
-                )
-        else:
-            # Token is still valid
             return {
-                "message": "Token is still valid",
-                "refreshed": False,
+                "message": "Token refreshed successfully",
+                "refreshed": True,
                 "platform": "youtube",
             }
+
+        # No refresh token, can't refresh
+        if "refresh_token" not in google_credentials:
+            await logout(request)
+            raise HTTPException(
+                status_code=401,
+                detail={
+                    "message": "No refresh token available, please login again. ",
+                    "refreshed": False,
+                    "platform": "youtube",
+                },
+            )
+
+        return {
+            "message": "Token is still valid",
+            "refreshed": False,
+            "platform": "youtube",
+        }
 
     except Exception as e:
         logger.error("Error refreshing Google token: %s", str(e))
         raise HTTPException(
             status_code=500,
-            detail={"message": f"Error refreshing token: {str(e)}", "refreshed": False},
+            detail={
+                "message": f"Error refreshing token: {str(e)}",
+                "refreshed": False,
+                "platform": "youtube",
+            },
         ) from e
+
+
+@router.get("/logout")
+async def logout(request: Request):
+    """Revoke credentials and clear session"""
+    if "google_credentials" not in request.session:
+        return {
+            "message": "No active session found",
+            "platform": "youtube",
+        }
+
+    revocation_successful = False
+    error_message = None
+
+    try:
+        credentials = google.oauth2.credentials.Credentials(
+            **request.session["google_credentials"]
+        )
+
+        # Attempt to revoke the token
+        revoke_response = requests.post(
+            "https://oauth2.googleapis.com/revoke",
+            params={"token": credentials.token},
+            headers={"content-type": "application/x-www-form-urlencoded"},
+            timeout=10,
+        )
+
+        revocation_successful = revoke_response.status_code == 200
+
+        if not revocation_successful:
+            # Try to get error details if available
+            try:
+                error_details = revoke_response.json()
+                error_message = (
+                    f"Revocation failed: {error_details.get('error', 'Unknown error')}"
+                )
+            except ValueError:
+                error_message = (
+                    f"Revocation failed with status code: {revoke_response.status_code}"
+                )
+
+    except Exception as e:
+        logger.error("Error during token revocation: %s", str(e))
+        error_message = f"Error during token revocation: {str(e)}"
+
+    finally:
+        # Always clear the session, regardless of revocation result
+        request.session.pop("google_credentials", None)
+
+    if revocation_successful:
+        return {
+            "message": "User has been logged out and credentials revoked",
+            "platform": "youtube",
+        }
+
+    return {
+        "message": "Session cleared, but token revocation failed",
+        "error": error_message,
+        "platform": "youtube",
+    }
