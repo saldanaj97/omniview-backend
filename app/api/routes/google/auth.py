@@ -37,7 +37,7 @@ async def authorize(request: Request):
     flow.redirect_uri = str(request.url_for("oauth2callback"))
 
     authorization_url, state = flow.authorization_url(
-        access_type="offline", include_granted_scopes="true"
+        access_type="offline", include_granted_scopes="true", prompt="consent"
     )
 
     request.session["state"] = state
