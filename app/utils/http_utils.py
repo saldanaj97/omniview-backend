@@ -1,7 +1,22 @@
 from fastapi import HTTPException, Request
 
 
-def raise_for_status(response, context: str = "Twitch API error"):
+def check_youtube_response_status(response, context: str = "YouTube API error"):
+    """
+    Utility to check YouTube API response status and raise a FastAPI HTTPException with details.
+    """
+    if response.status_code != 200:
+        try:
+            error_detail = response.json()
+        except Exception:
+            error_detail = response.text
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=f"{context}: {error_detail}",
+        )
+
+
+def check_twitch_response_status(response, context: str = "Twitch API error"):
     """
     Utility to check HTTPX response status and raise a FastAPI HTTPException with details.
     """

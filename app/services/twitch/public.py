@@ -4,7 +4,10 @@ import httpx
 from fastapi import HTTPException, Request
 
 from app.core.config import TWITCH_CLIENT_ID
-from app.utils.http_utils import ensure_session_credentials, raise_for_status
+from app.utils.http_utils import (
+    check_twitch_response_status,
+    ensure_session_credentials,
+)
 
 
 async def check_public_login_status(request: Request) -> Dict:
@@ -48,5 +51,7 @@ async def get_top_streams(request: Request) -> List[Dict]:
             "https://api.twitch.tv/helix/streams",
             headers=headers,
         )
-        raise_for_status(response, context="Failed to retrieve top streams")
+        check_twitch_response_status(response, context="Failed to retrieve top streams")
+        return response.json()
+        return response.json()
         return response.json()

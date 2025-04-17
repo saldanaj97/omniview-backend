@@ -4,7 +4,7 @@ import httpx
 from fastapi import HTTPException
 
 from app.core.config import TWITCH_CLIENT_ID
-from app.utils.http_utils import raise_for_status
+from app.utils.http_utils import check_twitch_response_status
 
 
 async def get_user_profile(access_token, user_ids=[]):
@@ -19,7 +19,7 @@ async def get_user_profile(access_token, user_ids=[]):
     async with httpx.AsyncClient() as client:
         response = await client.get(request_url, headers=headers, params=params)
 
-    raise_for_status(response, context="Failed to retrieve user profile")
+    check_twitch_response_status(response, context="Failed to retrieve user profile")
 
     data = response.json()
     return data.get("data", [])
@@ -42,7 +42,7 @@ async def get_user_follows(access_token: str, user_id: str) -> List[Dict]:
             params=params,
         )
 
-    raise_for_status(response)
+    check_twitch_response_status(response)
 
     data = response.json()
     if "data" not in data:
