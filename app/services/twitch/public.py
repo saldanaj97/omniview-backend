@@ -4,6 +4,7 @@ import httpx
 from fastapi import HTTPException, Request
 
 from app.core.config import TWITCH_CLIENT_ID
+from app.utils.http_utils import ensure_session_credentials, raise_for_status
 
 
 async def check_public_login_status(request: Request) -> Dict:
@@ -11,22 +12,17 @@ async def check_public_login_status(request: Request) -> Dict:
     Public endpoint to check which platforms have access tokens available.
     This is used for public access without requiring a session.
     """
-    if not request.session.get("twitch_public_credentials"):
-        return {
-            "data": [
-                {
-                    "platform": "Twitch",
-                    "accessTokenAvailable": False,
-                }
-            ],
-            "error": None,
-        }
+    try:
+        ensure_session_credentials(request, "twitch_public_credentials")
+        available = True
+    except HTTPException:
+        available = False
 
     return {
         "data": [
             {
                 "platform": "Twitch",
-                "accessTokenAvailable": True,
+                "accessTokenAvailable": available,
             }
         ],
         "error": None,
@@ -35,35 +31,22 @@ async def check_public_login_status(request: Request) -> Dict:
 
 async def get_top_streams(request: Request) -> List[Dict]:
     """
-    Get the list of users that the specified user is following
-
-    Args:
-        access_token: The user's access token for API authentication
-        user_id: The ID of the user whose following list to retrieve
+    Get the list of top streams from Twitch
 
     Returns:
-        A list of users that the specified user is following
+        A list of streams from Twitch.
     """
-
-    if not request.session.get("twitch_public_credentials"):
-        raise HTTPException(
-            status_code=401,
-            detail="No access token found for Twitch.",
-        )
+    credentials = ensure_session_credentials(request, "twitch_public_credentials")
 
     headers = {
         "Client-ID": TWITCH_CLIENT_ID,
-        "Authorization": f"Bearer {request.session['twitch_public_credentials'].get('access_token')}",
+        "Authorization": f"Bearer {credentials.get('access_token')}",
     }
 
-    try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://api.twitch.tv/helix/streams",
-                headers=headers,
-            )
+    async with httpx.AsyncClient() as client:
+        response = await client.get(
+            "https://api.twitch.tv/helix/streams",
+            headers=headers,
+        )
+        raise_for_status(response, context="Failed to retrieve top streams")
         return response.json()
-    except Exception as e:
-        raise HTTPException(
-            status_code=400, detail="Failed to retrieve top streams"
-        ) from e
