@@ -40,26 +40,41 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
             access_token=access_token, user_id=user_id
         )
 
-        if not following_data:
-            logger.error("No response from Twitch API while fetching user follows")
+        # If the service returns a dict with an error, propagate it
+        if isinstance(following_data, dict) and "error" in following_data:
+            logger.error("Twitch API error: %s", following_data)
             return Response(
                 content=json.dumps(
-                    {"error": "No response from Twitch API", "code": "TWITCH_API_ERROR"}
+                    {
+                        "error": following_data.get("error", "Twitch API error"),
+                        "details": following_data.get("message", ""),
+                        "code": following_data.get("status", 400),
+                    }
                 ),
-                status_code=502,
-                media_type="application/json",
-            )
-
-        if "data" not in following_data or "error" in following_data:
-            logger.error("Error in Twitch API response: %s", following_data)
-            return Response(
-                content=json.dumps(following_data),
                 status_code=following_data.get("status", 400),
                 media_type="application/json",
             )
 
+        # If the service returns a list (expected), wrap in a data key
+        if isinstance(following_data, list):
+            return Response(
+                content=json.dumps({"data": following_data}),
+                status_code=200,
+                media_type="application/json",
+            )
+
+        # If the service returns an unexpected structure
+        logger.error("Unexpected following data structure: %s", following_data)
         return Response(
-            content=json.dumps(following_data["data"]), media_type="application/json"
+            content=json.dumps(
+                {
+                    "error": "Unexpected response format from Twitch API",
+                    "details": str(following_data),
+                    "code": "UNEXPECTED_FORMAT",
+                }
+            ),
+            status_code=502,
+            media_type="application/json",
         )
     except ValueError as e:
         logger.error("Invalid data format in following data: %s", str(e))
@@ -75,9 +90,14 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
             media_type="application/json",
         )
     except Exception as e:
+        logger.exception("Unhandled exception in get_following")
         return Response(
             content=json.dumps(
-                {"error": "Failed to get following data", "details": str(e)}
+                {
+                    "error": "Failed to get following data",
+                    "details": str(e),
+                    "code": "INTERNAL_ERROR",
+                }
             ),
             status_code=500,
             media_type="application/json",
