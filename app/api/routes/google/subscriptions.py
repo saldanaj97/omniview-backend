@@ -9,6 +9,7 @@ from app.services.google.subscriptions import (
     enrich_and_filter_live_subscriptions,
     fetch_all_subscriptions,
 )
+from app.utils.redis_cache import get_cache, set_cache  # added import
 
 router = APIRouter()
 
@@ -17,6 +18,11 @@ router = APIRouter()
 async def get_subscriptions(credentials=Depends(require_google_auth)):
     """Get list of user's subscriptions that are currently live streaming"""
     try:
+        cache_key = "google:subscriptions_live"  # define cache key
+        cached_data = await get_cache(cache_key)
+        if cached_data:
+            return JSONResponse(content={"data": cached_data})
+
         youtube = googleapiclient.discovery.build(
             GOOGLE_API_SERVICE_NAME, GOOGLE_API_VERSION, credentials=credentials
         )
@@ -29,6 +35,8 @@ async def get_subscriptions(credentials=Depends(require_google_auth)):
         live_subscriptions = enrich_and_filter_live_subscriptions(
             all_subscriptions, live_statuses
         )
+
+        await set_cache(cache_key, live_subscriptions, 1200)  # cache result
 
         return JSONResponse(content={"data": live_subscriptions})
     except Exception as e:

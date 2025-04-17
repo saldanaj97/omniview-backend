@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Response
 
 from app.api.dependencies.twitch_auth import require_twitch_auth
 from app.services.twitch import user
+from app.utils.redis_cache import get_cache, set_cache  # added import
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -36,6 +37,15 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
                 media_type="application/json",
             )
 
+        cache_key = f"twitch:following:{user_id}"  # define cache key using user_id
+        cached_data = await get_cache(cache_key)
+        if cached_data:
+            return Response(
+                content=json.dumps({"data": cached_data}),
+                status_code=200,
+                media_type="application/json",
+            )
+
         following_data = await user.get_user_follows(
             access_token=access_token, user_id=user_id
         )
@@ -57,6 +67,7 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
 
         # If the service returns a list (expected), wrap in a data key
         if isinstance(following_data, list):
+            await set_cache(cache_key, following_data, 300)  # cache result
             return Response(
                 content=json.dumps({"data": following_data}),
                 status_code=200,
