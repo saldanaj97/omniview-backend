@@ -1,8 +1,9 @@
 import logging
 
-import httpx
 from fastapi import APIRouter, HTTPException, Request
 
+from app.services.kick.public import fetch_top_streams  # <-- added import
+from app.utils.http_utils import ensure_session_credentials
 from app.utils.redis_cache import get_cache, set_cache
 
 # Set up logging
@@ -16,6 +17,9 @@ async def top_streams(request: Request):
     """
     Endpoint to get top streams from Kick.
     """
+    # Check if we have the necessary credentials
+    credentials = ensure_session_credentials(request, "kick_public_credentials", "Kick")
+
     # Cache key for this endpoint
     cache_key = "kick:public:top_streams"
 
@@ -24,35 +28,11 @@ async def top_streams(request: Request):
     if cached_data:
         return cached_data
 
-    if not request.session.get("kick_public_credentials"):
-        logger.error("No Kick credentials found in session")
-        raise HTTPException(
-            status_code=401,
-            detail="No access token found for Kick.",
-        )
-
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                "https://api.kick.com/public/v1/livestreams",
-                headers={
-                    "Content-Type": "application/x-www-form-urlencoded",
-                    "Authorization": (
-                        f"Bearer {request.session['kick_public_credentials'].get('access_token')}"
-                    ),
-                },
-            )
-
-        if response.status_code != 200:
-            logger.error("Kick API error: %d - %s", response.status_code, response.text)
-            raise HTTPException(
-                status_code=response.status_code,
-                detail=f"Failed to retrieve top streams: {response.text}",
-            )
-        response_data = response.json()
+        response_data = await fetch_top_streams(credentials)
 
         # Cache for 2 minutes (120 seconds) since stream data changes frequently
-        success = await set_cache(cache_key, response_data, 120)
+        await set_cache(cache_key, response_data, 120)
         return response_data
 
     except Exception as e:
