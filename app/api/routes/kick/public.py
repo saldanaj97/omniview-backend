@@ -29,12 +29,12 @@ async def top_streams(request: Request):
         return cached_data
 
     try:
-        response_data = await fetch_top_streams(credentials)
+        response = await fetch_top_streams(credentials)
 
         # Cache for 2 minutes (120 seconds) since stream data changes frequently
-        await set_cache(cache_key, response_data, 120)
-        return response_data
+        await set_cache(cache_key, response, 120)
+        return response
 
     except Exception as e:
-        logger.exception("Error fetching Kick streams: %s", str(e))
+        logger.exception("Error fetching top Kick streams: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e)) from e

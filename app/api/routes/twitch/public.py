@@ -24,7 +24,9 @@ async def public_check_login_status(request: Request):
 @router.get("/top-streams")
 async def top_streams(request: Request):
     # Ensure Twitch public credentials exist in the session
-    ensure_session_credentials(request, "twitch_public_credentials", "Twitch")
+    credentials = ensure_session_credentials(
+        request, "twitch_public_credentials", "Twitch"
+    )
 
     # Cache key for this endpoint
     cache_key = "twitch:public:top-streams"
@@ -34,9 +36,13 @@ async def top_streams(request: Request):
     if cached_data:
         return cached_data
 
-    popular_streams = await public.get_top_streams(request=request)
+    try:
+        response = await public.get_top_streams(credentials)
 
-    # Cache for 2 minutes (120 seconds) since stream data changes frequently
-    await set_cache(cache_key, popular_streams, 120)
+        # Cache for 2 minutes (120 seconds) since stream data changes frequently
+        await set_cache(cache_key, response, 120)
 
-    return popular_streams
+        return response
+    except Exception as e:
+        logger.exception("Error fetching top Twitch streams: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

@@ -1,11 +1,7 @@
-import logging
-
 import httpx
-from fastapi import HTTPException
 
 from app.core.config import YOUTUBE_API_KEY
 from app.utils.http_utils import check_youtube_response_status
-from app.utils.redis_cache import get_cache, set_cache
 
 
 # Helper function to standardize YouTube streams
@@ -15,6 +11,7 @@ def standardize_youtube_stream_data(item: dict, extra: dict) -> dict:
     snippet = item.get("snippet", {})
     live_details = extra.get("liveStreamingDetails", {})
     snippet_extra = extra.get("snippet", {})
+
     return {
         "id": video_id,
         "user_id": snippet.get("channelId", ""),
@@ -54,37 +51,27 @@ async def get_livestream_details(video_id: str, client: httpx.AsyncClient) -> di
     return {}
 
 
-async def fetch_top_streams():
-    if not YOUTUBE_API_KEY:
-        raise HTTPException(status_code=500, detail="YouTube API key not configured")
+async def fetch_top_streams(credentials):
+    url = "https://youtube.googleapis.com/youtube/v3/search"
+    params = {
+        "part": "snippet",
+        "eventType": "live",
+        "maxResults": 10,
+        "type": "video",
+        "order": "viewCount",
+        "regionCode": "US",
+        "key": credentials,
+    }
+    headers = {"Accept": "application/json"}
 
-    try:
-        url = "https://youtube.googleapis.com/youtube/v3/search"
-        params = {
-            "part": "snippet",
-            "eventType": "live",
-            "maxResults": 10,
-            "type": "video",
-            "order": "viewCount",
-            "regionCode": "US",
-            "key": YOUTUBE_API_KEY,
-        }
-        headers = {"Accept": "application/json"}
-
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url, params=params, headers=headers)
-            check_youtube_response_status(response, "YouTube search error")
-            response_data = response.json()
-            transformed_data = {"data": []}
-            for item in response_data.get("items", []):
-                video_id = item["id"]["videoId"]
-                extra_data = await get_livestream_details(video_id, client)
-                standardized_stream_data = standardize_youtube_stream_data(
-                    item, extra_data
-                )
-                transformed_data["data"].append(standardized_stream_data)
-        return transformed_data
-
-    except Exception as e:
-        logging.error("Failed to fetch YouTube top streams: %s", str(e))
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params, headers=headers)
+        check_youtube_response_status(response, "YouTube search error")
+        response_data = response.json()
+        transformed_data = {"data": []}
+        for item in response_data.get("items", []):
+            video_id = item["id"]["videoId"]
+            extra_data = await get_livestream_details(video_id, client)
+            standardized_stream_data = standardize_youtube_stream_data(item, extra_data)
+            transformed_data["data"].append(standardized_stream_data)
+    return transformed_data

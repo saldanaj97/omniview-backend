@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List
 
 import httpx
@@ -8,6 +9,9 @@ from app.utils.http_utils import (
     check_twitch_response_status,
     ensure_session_credentials,
 )
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 
 async def check_public_login_status(request: Request) -> Dict:
@@ -32,16 +36,13 @@ async def check_public_login_status(request: Request) -> Dict:
     }
 
 
-async def get_top_streams(request: Request) -> List[Dict]:
+async def get_top_streams(credentials) -> List[Dict]:
     """
     Get the list of top streams from Twitch
 
     Returns:
         A list of streams from Twitch.
     """
-    credentials = ensure_session_credentials(
-        request, "twitch_public_credentials", "Twitch"
-    )
 
     headers = {
         "Client-ID": TWITCH_CLIENT_ID,
@@ -54,5 +55,4 @@ async def get_top_streams(request: Request) -> List[Dict]:
             headers=headers,
         )
         check_twitch_response_status(response, context="Failed to retrieve top streams")
-
         return response.json()

@@ -1,5 +1,7 @@
 from fastapi import HTTPException, Request
 
+from app.core.config import YOUTUBE_API_KEY
+
 
 def check_kick_response_status(response, context: str = "Kick API error"):
     """
@@ -46,11 +48,23 @@ def check_twitch_response_status(response, context: str = "Twitch API error"):
         )
 
 
-def ensure_session_credentials(request: Request, name: str, platform: str) -> dict:
+def ensure_session_credentials(request: Request, name: str, platform: str):
     """
     Ensures public credentials are available in the session.
     Returns the credentials if available; otherwise raises HTTPException.
     """
+    # If the platform is YouTube, but the API key is not configured, raise an exception
+    if platform == "Youtube" and YOUTUBE_API_KEY is None:
+        raise HTTPException(
+            status_code=401,
+            detail="YouTube API key is not configured.",
+        )
+
+    # If the platform is YouTube, return the API key directly
+    if platform == "Youtube":
+        return YOUTUBE_API_KEY
+
+    # For other platforms, check the session for credentials
     credentials = request.session.get(name)
     if not credentials:
         raise HTTPException(
