@@ -24,7 +24,7 @@ async def public_check_login_status(request: Request):
 @router.get("/top-streams")
 async def top_streams(request: Request):
     # Ensure Twitch public credentials exist in the session
-    ensure_session_credentials(request, "twitch_public_credentials")
+    ensure_session_credentials(request, "twitch_public_credentials", "Twitch")
 
     # Cache key for this endpoint
     cache_key = "twitch:public:top-streams"

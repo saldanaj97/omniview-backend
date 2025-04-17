@@ -16,7 +16,7 @@ async def check_public_login_status(request: Request) -> Dict:
     This is used for public access without requiring a session.
     """
     try:
-        ensure_session_credentials(request, "twitch_public_credentials")
+        ensure_session_credentials(request, "twitch_public_credentials", "Twitch")
         available = True
     except HTTPException:
         available = False
@@ -39,7 +39,9 @@ async def get_top_streams(request: Request) -> List[Dict]:
     Returns:
         A list of streams from Twitch.
     """
-    credentials = ensure_session_credentials(request, "twitch_public_credentials")
+    credentials = ensure_session_credentials(
+        request, "twitch_public_credentials", "Twitch"
+    )
 
     headers = {
         "Client-ID": TWITCH_CLIENT_ID,
@@ -52,6 +54,5 @@ async def get_top_streams(request: Request) -> List[Dict]:
             headers=headers,
         )
         check_twitch_response_status(response, context="Failed to retrieve top streams")
-        return response.json()
-        return response.json()
+
         return response.json()
