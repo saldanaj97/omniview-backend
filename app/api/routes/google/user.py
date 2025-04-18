@@ -18,7 +18,7 @@ router = APIRouter()
 async def get_subscriptions(credentials=Depends(require_google_auth)):
     """Get list of user's subscriptions that are currently live streaming"""
     try:
-        cache_key = "google:subscriptions_live"
+        cache_key = "google:subscriptions"
         cached_data = await get_cache(cache_key)
         if cached_data:
             return JSONResponse(content={"data": cached_data})
