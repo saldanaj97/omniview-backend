@@ -68,7 +68,7 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
 
         # If the service returns a list (expected), wrap in a data key
         if isinstance(following_data, list):
-            await set_cache(cache_key, following_data, 300)  # cache result
+            await set_cache(cache_key, following_data, 120)  # cache result
             return JSONResponse(
                 content={"data": [user.model_dump() for user in following_data]},
                 status_code=200,
