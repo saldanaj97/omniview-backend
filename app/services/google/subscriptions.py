@@ -223,13 +223,49 @@ async def check_all_channels_live_status(subscriptions):
 
 
 def enrich_and_filter_live_subscriptions(subscriptions, live_statuses):
-    """Add live status info to subscriptions and filter for live channels only"""
+    """Add live status info to subscriptions, filter for live channels, and standardize data"""
     for subscription in subscriptions:
         channel_id = subscription["snippet"]["resourceId"]["channelId"]
         subscription["livestream_info"] = live_statuses.get(channel_id, {"live": False})
-
-    return [
+    live_subs = [
         subscription
         for subscription in subscriptions
         if subscription["livestream_info"].get("live")
     ]
+    return [standardize_data(subscription) for subscription in live_subs]
+
+
+def standardize_data(subscription):
+    """Converts a subscription with livestream info to the FollowedStreamer format."""
+    ls = subscription.get("livestream_info", {})
+    snippet = subscription.get("snippet", {})
+    thumbnails = snippet.get("thumbnails", {})
+    default_thumb = thumbnails.get("default", {}).get("url", "")
+    high_thumb = thumbnails.get("high", {}).get("url", default_thumb)
+
+    return {
+        "id": snippet.get("resourceId", {}).get("channelId", ""),
+        "login": snippet.get("customUrl", ""),
+        "display_name": snippet.get("title", ""),
+        "type": "live",
+        "broadcaster_type": "",
+        "description": snippet.get("description", ""),
+        "profile_image_url": default_thumb,
+        "offline_image_url": high_thumb,
+        "view_count": ls.get("viewer_count", 0),
+        "created_at": "",
+        "user_id": snippet.get("resourceId", {}).get("channelId", ""),
+        "user_login": snippet.get("customUrl", ""),
+        "user_name": snippet.get("title", ""),
+        "game_id": "",
+        "game_name": "",
+        "title": ls.get("title", snippet.get("title", "")),
+        "viewer_count": ls.get("viewer_count", 0),
+        "started_at": ls.get("actualStartTime", ls.get("scheduledStartTime", "")),
+        "language": ls.get("language", ""),
+        "thumbnail_url": ls.get("thumbnail", default_thumb),
+        "tag_ids": [],
+        "tags": [],
+        "is_mature": False,
+        "platform": "YouTube",
+    }
