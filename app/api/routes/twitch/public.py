@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/top-streams")
+@router.get("/top_streams")
 async def top_streams(request: Request):
     try:
         # Ensure Twitch public credentials exist in the session

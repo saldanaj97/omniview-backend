@@ -14,7 +14,7 @@ from app.utils.redis_cache import get_cache, set_cache  # added import
 router = APIRouter()
 
 
-@router.get("/subscriptions/live")
+@router.get("/subscriptions")
 async def get_subscriptions(credentials=Depends(require_google_auth)):
     """Get list of user's subscriptions that are currently live streaming"""
     try:
