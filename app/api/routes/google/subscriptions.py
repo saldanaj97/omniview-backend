@@ -18,7 +18,7 @@ router = APIRouter()
 async def get_subscriptions(credentials=Depends(require_google_auth)):
     """Get list of user's subscriptions that are currently live streaming"""
     try:
-        cache_key = "google:subscriptions_live"  # define cache key
+        cache_key = "google:subscriptions_live"
         cached_data = await get_cache(cache_key)
         if cached_data:
             return JSONResponse(content={"data": cached_data})
@@ -39,7 +39,7 @@ async def get_subscriptions(credentials=Depends(require_google_auth)):
         # Serialize FollowedStreamer models to dictionaries
         serialized_live_subs = [sub.model_dump() for sub in live_subscriptions]
 
-        await set_cache(cache_key, serialized_live_subs, 1200)  # cache result
+        await set_cache(cache_key, serialized_live_subs, 120)  # cache result
 
         return JSONResponse(content={"data": serialized_live_subs})
     except Exception as e:
