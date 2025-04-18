@@ -2,6 +2,8 @@ import google.oauth2.credentials
 from fastapi import HTTPException, Request
 from google.auth.transport.requests import Request as GoogleAuthRequest
 
+from app.utils.http_utils import ensure_session_credentials
+
 
 async def require_google_auth(request: Request):
     """
@@ -9,21 +11,13 @@ async def require_google_auth(request: Request):
     Returns Google credentials if authenticated.
     Raises HTTPException with 401 status code if not authenticated.
     """
-    if "google_credentials" not in request.session:
-        raise HTTPException(
-            status_code=401,
-            detail={
-                "error": "User not authenticated",
-                "message": "Please login to access this resource.",
-            },
-        )
-
+    ensure_session_credentials(request, "google_credentials", "Google")
     google_credentials = request.session["google_credentials"]
 
     # Check if credentials dictionary has minimum required fields
     required_fields = ["token", "refresh_token", "client_id", "client_secret"]
     for field in required_fields:
-        if field not in google_credentials:
+        if field not in google_credentials or google_credentials[field] is None:
             raise HTTPException(
                 status_code=401,
                 detail={
