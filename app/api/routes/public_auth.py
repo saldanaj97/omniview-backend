@@ -1,34 +1,18 @@
 import logging
-from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
 
 from app.api.routes.kick.auth import kick_public_token
 from app.api.routes.twitch.auth import twitch_public_token
 from app.core.config import YOUTUBE_API_KEY
+from app.schemas.public_auth import (
+    LoginStatusResponse,
+    PlatformLoginStatus,
+    PublicAccessResponse,
+    PublicPlatformAccessTokenResponse,
+)
 
 router = APIRouter()
-
-
-class PlatformLoginStatus(BaseModel):
-    platform: str
-    loggedIn: bool
-
-
-class LoginStatusResponse(BaseModel):
-    data: List[PlatformLoginStatus]
-    error: Optional[Dict[str, str]] = None
-
-
-class PublicPlatformAccessTokenResponse(BaseModel):
-    platform: str
-    accessTokenAvailable: bool
-
-
-class PublicAccessResponse(BaseModel):
-    data: List[PublicPlatformAccessTokenResponse]
-    error: Optional[Dict[str, str]] = None
 
 
 @router.get("/status", response_model=LoginStatusResponse)
