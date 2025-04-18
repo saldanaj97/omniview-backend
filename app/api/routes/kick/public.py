@@ -17,24 +17,26 @@ async def top_streams(request: Request):
     """
     Endpoint to get top streams from Kick.
     """
-    # Check if we have the necessary credentials
-    credentials = ensure_session_credentials(request, "kick_public_credentials", "Kick")
-
-    # Cache key for this endpoint
-    cache_key = "kick:public:top_streams"
-
-    # Try to get from cache first
-    cached_data = await get_cache(cache_key)
-    if cached_data:
-        return cached_data
-
     try:
+        # Check if we have the necessary credentials
+        credentials = ensure_session_credentials(
+            request, "kick_public_credentials", "Kick"
+        )
+
+        # Cache key for this endpoint
+        cache_key = "kick:public:top_streams"
+
+        # Try to get from cache first
+        cached_data = await get_cache(cache_key)
+        if cached_data:
+            return cached_data
+
+        # If not in cache, fetch from Kick API
         response = await fetch_top_streams(credentials)
 
         # Cache for 2 minutes (120 seconds) since stream data changes frequently
         await set_cache(cache_key, response, 120)
         return response
-
     except Exception as e:
         logger.exception("Error fetching top Kick streams: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e)) from e
