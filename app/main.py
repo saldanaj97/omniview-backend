@@ -8,12 +8,12 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.api.routes import debug, public_auth
 from app.api.routes.google import auth as google_auth
 from app.api.routes.google import public as google_public
-from app.api.routes.google import subscriptions as google_subscriptions
+from app.api.routes.google import user as google_subscriptions
 from app.api.routes.kick import auth as kick_auth
 from app.api.routes.kick import public as kick_public
 from app.api.routes.twitch import auth as twitch_auth
 from app.api.routes.twitch import public as twitch_public
-from app.api.routes.twitch import users as twitch_users
+from app.api.routes.twitch import user as twitch_users
 from app.core.config import SECRET_KEY
 from app.core.redis_client import redis_client
 from app.utils.logging import configure_logging

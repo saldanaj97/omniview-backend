@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.dependencies.youtube_auth import require_google_auth
 from app.core.config import GOOGLE_API_SERVICE_NAME, GOOGLE_API_VERSION
-from app.services.google.subscriptions import (
+from app.services.google.user import (
     check_all_channels_live_status,
     enrich_and_filter_live_subscriptions,
     fetch_all_subscriptions,
