@@ -12,14 +12,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/status")
-async def public_check_login_status(request: Request):
-    """
-    Public endpoint to check which platforms have access tokens available.
-    This is used for public access without requiring a session.
-    """
-    return await public.check_public_login_status(request=request)
-
 
 @router.get("/top-streams")
 async def top_streams(request: Request):
