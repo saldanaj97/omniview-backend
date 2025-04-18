@@ -2,6 +2,7 @@ import json
 import logging
 
 from fastapi import APIRouter, Depends, Response
+from fastapi.responses import JSONResponse
 
 from app.api.dependencies.twitch_auth import require_twitch_auth
 from app.services.twitch import user
@@ -37,7 +38,7 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
                 media_type="application/json",
             )
 
-        cache_key = f"twitch:following:{user_id}"  # define cache key using user_id
+        cache_key = "twitch:following"  # define cache key using user_id
         cached_data = await get_cache(cache_key)
         if cached_data:
             return Response(
@@ -68,15 +69,14 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
         # If the service returns a list (expected), wrap in a data key
         if isinstance(following_data, list):
             await set_cache(cache_key, following_data, 300)  # cache result
-            return Response(
-                content=json.dumps({"data": following_data}),
+            return JSONResponse(
+                content={"data": [user.model_dump() for user in following_data]},
                 status_code=200,
-                media_type="application/json",
             )
 
         # If the service returns an unexpected structure
         logger.error("Unexpected following data structure: %s", following_data)
-        return Response(
+        return JSONResponse(
             content=json.dumps(
                 {
                     "error": "Unexpected response format from Twitch API",
