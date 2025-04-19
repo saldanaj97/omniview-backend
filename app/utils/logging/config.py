@@ -5,7 +5,9 @@ Logging configuration for the OmniView Backend.
 import logging
 import os
 import sys
-from typing import Dict, List, Optional
+from typing import List, Optional
+
+from pythonjsonlogger.json import JsonFormatter
 
 
 def configure_logging(
@@ -55,14 +57,10 @@ def _configure_json_logging(log_level: int) -> None:
     """
     Configure JSON logging for better integration with log management systems.
 
-    Requires the python-json-logger package:
-    pip install python-json-logger
     """
     try:
-        from pythonjsonlogger import jsonlogger
-
         log_handler = logging.StreamHandler()
-        formatter = jsonlogger.JsonFormatter(
+        formatter = JsonFormatter(
             "%(asctime)s %(name)s %(levelname)s %(message)s %(filename)s %(funcName)s %(lineno)s"
         )
         log_handler.setFormatter(formatter)
