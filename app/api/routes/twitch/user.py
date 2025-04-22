@@ -3,6 +3,7 @@ import logging
 
 from fastapi import APIRouter, Depends, Response
 from fastapi.responses import JSONResponse
+from idna import decode
 
 from app.api.dependencies.twitch_auth import require_twitch_auth
 from app.services.twitch import user
@@ -16,8 +17,8 @@ logger = logging.getLogger(__name__)
 async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
     try:
         decoded_auth_token, logged_in_user = auth_data
-        access_token = decoded_auth_token.get("access_token")
-        if not access_token:
+
+        if not decoded_auth_token.get("access_token"):
             logger.error("Missing access token in authenticated request")
             return Response(
                 content=json.dumps(
@@ -27,8 +28,8 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
                 media_type="application/json",
             )
 
-        user_id = logged_in_user.get("id")
-        if not user_id:
+        if not logged_in_user.get("id"):
+            # If the user ID is not present, return an error
             logger.error("Missing user ID in authenticated request")
             return Response(
                 content=json.dumps(
@@ -38,7 +39,8 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
                 media_type="application/json",
             )
 
-        cache_key = "twitch:following"  # define cache key using user_id
+        # Check if the data is already cached
+        cache_key = f"twitch:following:{logged_in_user.get('id')}"
         cached_data = await get_cache(cache_key)
         if cached_data:
             return Response(
@@ -47,6 +49,8 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
                 media_type="application/json",
             )
 
+        access_token = decoded_auth_token.get("access_token")
+        user_id = logged_in_user.get("id")
         following_data = await user.get_user_follows(
             access_token=access_token, user_id=user_id
         )
