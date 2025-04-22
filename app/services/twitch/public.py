@@ -55,4 +55,11 @@ async def get_top_streams(credentials) -> List[Dict]:
             headers=headers,
         )
         check_twitch_response_status(response, context="Failed to retrieve top streams")
-        return response.json()
+
+        # Add 'platform':'twitch' to each entry in the response for uniformity with other responses
+        response_data = response.json()
+        if "data" in response_data and isinstance(response_data["data"], list):
+            for stream in response_data["data"]:
+                stream["platform"] = "twitch"
+
+        return response_data
