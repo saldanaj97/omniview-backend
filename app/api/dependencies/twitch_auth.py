@@ -39,4 +39,4 @@ async def require_twitch_auth(request: Request) -> Tuple[Dict, Dict]:
     credentials = request.session["twitch_credentials"]
     user_profile = request.session.get("twitch_user_profile", {})
 
-    return credentials, user_profile
+    return credentials, user_profile[0] if user_profile else {}
