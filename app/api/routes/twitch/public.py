@@ -21,7 +21,7 @@ async def top_streams(request: Request):
         )
 
         # Cache key for this endpoint
-        cache_key = "twitch:public:top-streams"
+        cache_key = "twitch:public:top_streams"
 
         # Try to get from cache first
         cached_data = await get_cache(cache_key)
