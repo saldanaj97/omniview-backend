@@ -18,14 +18,19 @@ router = APIRouter()
 async def get_subscriptions(credentials=Depends(require_google_auth)):
     """Get list of user's subscriptions that are currently live streaming"""
     try:
-        cache_key = "google:subscriptions"
-        cached_data = await get_cache(cache_key)
-        if cached_data:
-            return JSONResponse(content={"data": cached_data})
-
+        # build the client so we can fetch the user's channel ID
         youtube = googleapiclient.discovery.build(
             GOOGLE_API_SERVICE_NAME, GOOGLE_API_VERSION, credentials=credentials
         )
+        # get the current user's channel id
+        channel_resp = youtube.channels().list(part="id", mine=True).execute()
+        channel_id = channel_resp["items"][0]["id"]
+
+        # now namespace the cache key per‐user
+        cache_key = f"google:subscriptions:{channel_id}"
+        cached_data = await get_cache(cache_key)
+        if cached_data:
+            return JSONResponse(content={"data": cached_data})
 
         # Fetch all subscriptions and check their live status
         all_subscriptions = await fetch_all_subscriptions(youtube)
