@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, Request, Response
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 
 from app.core.redis_client import get_token_data, set_token_data
 from app.core.security import generate_state_token
@@ -140,14 +140,27 @@ async def twitch_callback(
 async def logout(request: Request):
     """
     Logout an authenticated user by clearing cookies.
+    Returns JSON if called via fetch/AJAX, otherwise redirects.
     """
-    response = Response(content="Logged out successfully.")
+
+    # Check if the request has a session
+    if not request.session:
+        return {
+            "message": "No active session found",
+            "platform": "twitch",
+        }
 
     # Only clear twitch-related session data
-    if "session" in request.scope and "twitch_credentials" in request.session:
+    if "twitch_credentials" in request.session:
         request.session.pop("twitch_credentials", None)
 
-    return response
+    if "twitch_user_profile" in request.session:
+        request.session.pop("twitch_user_profile", None)
+
+    return {
+        "message": "User has been logged out of Twitch successfully.",
+        "platform": "twitch",
+    }
 
 
 @router.get("/oauth/refresh")
