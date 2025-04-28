@@ -22,6 +22,7 @@ async def get_subscriptions(credentials=Depends(require_google_auth)):
         youtube = googleapiclient.discovery.build(
             GOOGLE_API_SERVICE_NAME, GOOGLE_API_VERSION, credentials=credentials
         )
+
         # get the current user's channel id
         channel_resp = youtube.channels().list(part="id", mine=True).execute()
         channel_id = channel_resp["items"][0]["id"]

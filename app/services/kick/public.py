@@ -19,26 +19,33 @@ async def fetch_top_streams(credentials) -> dict:
         return standardize_livestream_data(raw_data)
 
 
+def standardize_kick_stream_data(item: dict) -> dict:
+    """
+    Convert raw Kick stream item into unified Stream schema.
+    """
+    return {
+        "id": str(item.get("broadcaster_user_id", "")),
+        "user_id": str(item.get("broadcaster_user_id", "")),
+        "user_name": str(item.get("slug", "")),
+        "title": item.get("stream_title", ""),
+        "viewer_count": item.get("viewer_count", 0),
+        "started_at": item.get("started_at", ""),
+        "language": item.get("language", ""),
+        "thumbnail_url": item.get("thumbnail", ""),
+        "is_mature": item.get("has_mature_content", False),
+        "platform": "kick",
+        "game_name": item.get("category", {}).get("name", ""),
+        "stream_type": "live",
+        "profile_image_url": None,
+    }
+
+
 def standardize_livestream_data(raw_data: dict) -> dict:
     """
     Standardizes the raw Kick API response into the unified Stream type.
     """
     return {
         "data": [
-            {
-                "id": str(item.get("broadcaster_user_id", "")),
-                "user_id": str(item.get("broadcaster_user_id", "")),
-                "user_name": str(item.get("slug", "")),
-                "title": item.get("stream_title", ""),
-                "viewer_count": item.get("viewer_count", 0),
-                "started_at": item.get("started_at", ""),
-                "language": item.get("language", ""),
-                "thumbnail_url": item.get("thumbnail", ""),
-                "is_mature": item.get("has_mature_content", False),
-                "platform": "kick",
-                "game_name": item.get("category", {}).get("name", ""),
-                "stream_type": "live",
-            }
-            for item in raw_data.get("data", [])
+            standardize_kick_stream_data(item) for item in raw_data.get("data", [])
         ]
     }
