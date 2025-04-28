@@ -35,7 +35,6 @@ async def top_streams(request: Request):
 
         # If not in cache, fetch from YouTube API
         response = await fetch_top_streams(credentials)
-
         # Convert to Stream models
         standardized = [
             Stream.model_validate(item) for item in response.get("data", [])
