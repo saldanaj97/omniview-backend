@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.schemas.top_streams import Stream
 from app.services.google.public import fetch_top_streams
 from app.utils.http_utils import ensure_session_credentials
 from app.utils.redis_cache import get_cache, set_cache
@@ -25,15 +26,24 @@ async def top_streams(request: Request):
         # Try to get from cache first
         cache_key = "google:public:top_streams"
         cached_data = await get_cache(cache_key)
-        if cached_data:
-            return cached_data
+
+        # Deserialize cached response into Stream models
+        if isinstance(cached_data, dict) and "data" in cached_data:
+            return {
+                "data": [Stream.model_validate(item) for item in cached_data["data"]]
+            }
 
         # If not in cache, fetch from YouTube API
         response = await fetch_top_streams(credentials)
 
-        # Cache for 20 minutes (1200 seconds) since stream data changes frequently
-        await set_cache(cache_key, response, 1200)
-        return response
+        # Convert to Stream models
+        standardized = [
+            Stream.model_validate(item) for item in response.get("data", [])
+        ]
+
+        # Cache for 20 minutes (1200 seconds)
+        await set_cache(cache_key, {"data": standardized}, 1200)
+        return {"data": standardized}
     except Exception as e:
         logger.exception("Error fetching top YouTube streams: %s", str(e))
         raise HTTPException(status_code=500, detail=str(e)) from e
