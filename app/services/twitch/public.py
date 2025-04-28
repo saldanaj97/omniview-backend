@@ -85,4 +85,37 @@ async def get_top_streams(credentials) -> dict:
             else []
         )
         unified = [standardize_twitch_stream_data(item) for item in streams]
+
+        # Fetch profile images for each streamer
+        if unified:
+            await fetch_profile_images(client, headers, unified)
+
         return {"data": unified}
+
+
+async def fetch_profile_images(
+    client: httpx.AsyncClient, headers: dict, unified: list
+) -> None:
+    """
+    Fetch profile images for each streamer in the unified list.
+    This function modifies the unified list in place to add the profile_image_url.
+    """
+    # Fetch profile images for each streamer
+    user_ids = list({stream["user_id"] for stream in unified if stream["user_id"]})
+    if user_ids:
+        params = [("id", uid) for uid in user_ids]
+        profile_response = await client.get(
+            "https://api.twitch.tv/helix/users",
+            headers=headers,
+            params=params,
+        )
+        check_twitch_response_status(
+            profile_response,
+            context="Failed to retrieve user profiles",
+        )
+        profile_data = profile_response.json().get("data", [])
+        id_to_image = {
+            user["id"]: user.get("profile_image_url") for user in profile_data
+        }
+        for stream in unified:
+            stream["profile_image_url"] = id_to_image.get(stream["user_id"])

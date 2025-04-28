@@ -4,6 +4,9 @@ from app.utils.http_utils import check_kick_response_status
 
 
 async def fetch_top_streams(credentials) -> dict:
+    """
+    Fetch top streams from Kick API.
+    """
     access_token = credentials.get("access_token")
 
     async with httpx.AsyncClient() as client:
@@ -16,7 +19,57 @@ async def fetch_top_streams(credentials) -> dict:
         )
         check_kick_response_status(response, "Kick API error")
         raw_data = response.json()
-        return standardize_livestream_data(raw_data)
+
+        # Standardize and enrich streams with user profiles
+        standardized = standardize_livestream_data(raw_data)
+        unified = standardized.get("data", [])
+
+        # Fetch profile images and display names for each streamer
+        user_ids = list(
+            {stream["user_id"] for stream in unified if stream.get("user_id")}
+        )
+        if user_ids:
+            profiles = await fetch_profile_pictures(user_ids, client, access_token)
+            for stream in unified:
+                uid = stream.get("user_id")
+                profile = profiles.get(uid, {})
+                stream["profile_image_url"] = profile.get(
+                    "profile_picture", stream.get("profile_image_url")
+                )
+                stream["user_name"] = profile.get("name", stream.get("user_name"))
+
+        return {"data": unified}
+
+
+async def fetch_profile_pictures(
+    user_ids: list, client: httpx.AsyncClient, access_token: str
+) -> dict:
+    """
+    Fetch profile pictures and names for a list of user IDs.
+    """
+    if not user_ids:
+        return {}
+
+    params = [("id", uid) for uid in user_ids]
+    response = await client.get(
+        "https://api.kick.com/public/v1/users",
+        headers={"Authorization": f"Bearer {access_token}", "Accept": "*/*"},
+        params=params,
+    )
+    check_kick_response_status(
+        response, context="Failed to retrieve Kick user profiles"
+    )
+
+    # Build a mapping from user id to a dict with profile_picture and name
+    profile_list = response.json().get("data", [])
+    profiles = {
+        str(u["user_id"]): {
+            "profile_picture": u.get("profile_picture"),
+            "name": u.get("name"),
+        }
+        for u in profile_list
+    }
+    return profiles
 
 
 def standardize_kick_stream_data(item: dict) -> dict:
@@ -36,7 +89,7 @@ def standardize_kick_stream_data(item: dict) -> dict:
         "platform": "kick",
         "game_name": item.get("category", {}).get("name", ""),
         "stream_type": "live",
-        "profile_image_url": None,
+        "profile_image_url": item.get("profile_image_url", ""),
     }
 
 
