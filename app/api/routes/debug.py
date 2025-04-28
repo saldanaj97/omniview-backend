@@ -43,7 +43,7 @@ async def get_cache_value(key: str):
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.delete("/cache/flush")
+@router.get("/cache/flush")
 async def flush_cache():
     """
     Debug endpoint to flush all Redis cache
