@@ -1,9 +1,7 @@
-import json
 import logging
 
 import google.oauth2.credentials
 import google_auth_oauthlib.flow
-import requests
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from google.auth.transport.requests import Request as GoogleAuthRequest
