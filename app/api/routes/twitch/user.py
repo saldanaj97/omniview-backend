@@ -78,32 +78,6 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
                 status_code=200,
             )
 
-        # If the service returns an unexpected structure
-        logger.error("Unexpected following data structure: %s", following_data)
-        return JSONResponse(
-            content=json.dumps(
-                {
-                    "error": "Unexpected response format from Twitch API",
-                    "details": str(following_data),
-                    "code": "UNEXPECTED_FORMAT",
-                }
-            ),
-            status_code=502,
-            media_type="application/json",
-        )
-    except ValueError as e:
-        logger.error("Invalid data format in following data: %s", str(e))
-        return Response(
-            content=json.dumps(
-                {
-                    "error": "Invalid data format",
-                    "details": str(e),
-                    "code": "FORMAT_ERROR",
-                }
-            ),
-            status_code=400,
-            media_type="application/json",
-        )
     except Exception as e:
         logger.exception("Unhandled exception in get_following")
         return Response(
