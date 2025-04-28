@@ -45,7 +45,8 @@ async def get_subscriptions(credentials=Depends(require_google_auth)):
         # Serialize FollowedStreamer models to dictionaries
         serialized_live_subs = [sub.model_dump() for sub in live_subscriptions]
 
-        await set_cache(cache_key, serialized_live_subs, 120)  # cache result
+        # Only use 2 min for now since we have limimted quota
+        await set_cache(cache_key, serialized_live_subs, 120)
 
         return JSONResponse(content={"data": serialized_live_subs})
     except Exception as e:

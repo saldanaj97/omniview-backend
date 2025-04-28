@@ -42,7 +42,7 @@ async def top_streams(request: Request):
         ]
 
         # Cache for 2 minutes (120 seconds) since stream data changes frequently
-        await set_cache(cache_key, {"data": standardized}, 120)
+        await set_cache(cache_key, {"data": standardized}, 60)
         return {"data": standardized}
     except Exception as e:
         logger.exception("Error fetching top Twitch streams: %s", str(e))

@@ -35,13 +35,15 @@ async def top_streams(request: Request):
 
         # If not in cache, fetch from YouTube API
         response = await fetch_top_streams(credentials)
+
         # Convert to Stream models
         standardized = [
             Stream.model_validate(item) for item in response.get("data", [])
         ]
 
-        # Cache for 20 minutes (1200 seconds)
+        # Cache for 20 minutes (1200 seconds) since we have limited quota
         await set_cache(cache_key, {"data": standardized}, 1200)
+
         return {"data": standardized}
     except Exception as e:
         logger.exception("Error fetching top YouTube streams: %s", str(e))
