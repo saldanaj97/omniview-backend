@@ -57,4 +57,6 @@ class FollowedStreamer(BaseModel):
     tag_ids: List[str]
     tags: List[str]
     is_mature: bool
+    livechat_id: str | None = None
+    video_id: str | None = None
     platform: Literal["Twitch", "YouTube"]

@@ -21,6 +21,9 @@ def standardize_youtube_stream_data(
     snippet = item.get("snippet", {})
     live_details = extra.get("liveStreamingDetails", {})
     snippet_extra = extra.get("snippet", {})
+    profile_image_url = (
+        channel_snippet.get("thumbnails", {}).get("default", {}).get("url", "")
+    )
 
     return {
         "id": video_id,
@@ -39,9 +42,7 @@ def standardize_youtube_stream_data(
         "platform": "youtube",
         "game_name": None,
         "stream_type": "live",
-        "profile_image_url": channel_snippet.get("thumbnails", {})
-        .get("default", {})
-        .get("url", ""),
+        "profile_image_url": profile_image_url,
     }
 
 

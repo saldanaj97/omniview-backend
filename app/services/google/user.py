@@ -1,4 +1,5 @@
 import asyncio
+import json
 import re
 
 import httpx
@@ -230,6 +231,9 @@ def enrich_and_filter_live_subscriptions(subscriptions, live_statuses):
     for subscription in subscriptions:
         channel_id = subscription["snippet"]["resourceId"]["channelId"]
         subscription["livestream_info"] = live_statuses.get(channel_id, {"live": False})
+        subscription["livestream_info"]["live_chat_id"] = live_statuses.get(
+            channel_id, {}
+        ).get("live_chat_id")
     live_subs = [
         subscription
         for subscription in subscriptions
@@ -273,5 +277,7 @@ def standardize_data(subscription) -> FollowedStreamer:
         tag_ids=[],
         tags=[],
         is_mature=False,
+        livechat_id=ls.get("live_chat_id", None),
+        video_id=ls.get("vid", None),
         platform="YouTube",
     )
