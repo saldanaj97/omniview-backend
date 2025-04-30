@@ -1,0 +1,42 @@
+# ENV
+.env
+.env.production
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Distribution/build artifacts
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Redis dump file
+dump.rdb
+
+# Git files
+.git
+.gitignore
+
+# IDE/editor directories
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+
+# Testing and coverage
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/
+
+# Logs
+*.log
