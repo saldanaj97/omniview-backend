@@ -1,17 +1,20 @@
+import logging
+
 import googleapiclient.discovery
-from fastapi import APIRouter, Depends
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Depends, HTTPException
 
 from app.api.dependencies.youtube_auth import require_google_auth
 from app.core.config import GOOGLE_API_SERVICE_NAME, GOOGLE_API_VERSION
+from app.schemas.followed_streamer import FollowedStreamer
 from app.services.google.user import (
     check_all_channels_live_status,
     enrich_and_filter_live_subscriptions,
     fetch_all_subscriptions,
 )
-from app.utils.redis_cache import get_cache, set_cache  # added import
+from app.utils.redis_cache import get_cache, set_cache
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/subscriptions")
@@ -30,8 +33,12 @@ async def get_subscriptions(credentials=Depends(require_google_auth)):
         # now namespace the cache key per‐user
         cache_key = f"google:subscriptions:{channel_id}"
         cached_data = await get_cache(cache_key)
+
+        # Deserialize cached response into FollowedStreamer models
         if cached_data:
-            return JSONResponse(content={"data": cached_data})
+            return {
+                "data": [FollowedStreamer.model_validate(item) for item in cached_data]
+            }
 
         # Fetch all subscriptions and check their live status
         all_subscriptions = await fetch_all_subscriptions(youtube)
@@ -42,18 +49,12 @@ async def get_subscriptions(credentials=Depends(require_google_auth)):
             all_subscriptions, live_statuses
         )
 
-        # Serialize FollowedStreamer models to dictionaries
-        serialized_live_subs = [sub.model_dump() for sub in live_subscriptions]
-
-        # Only use 2 min for now since we have limimted quota
-        await set_cache(cache_key, serialized_live_subs, 120)
-
-        return JSONResponse(content={"data": serialized_live_subs})
-    except Exception as e:
-        return JSONResponse(
-            content={
-                "error": "Failed to get subscriptions that are currently live.",
-                "message": str(e),
-            },
-            status_code=500,
+        # Cache the serializable data for 2 minutes
+        await set_cache(
+            cache_key, [sub.model_dump() for sub in live_subscriptions], 120
         )
+
+        return {"data": live_subscriptions}
+    except Exception as e:
+        logger.exception("Error fetching YouTube subscriptions: %s", str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e

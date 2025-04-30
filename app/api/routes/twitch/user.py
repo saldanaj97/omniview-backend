@@ -1,11 +1,10 @@
-import json
 import logging
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
-from idna import decode
 
 from app.api.dependencies.twitch_auth import require_twitch_auth
+from app.schemas.followed_streamer import FollowedStreamer
 from app.services.twitch import user
 from app.utils.redis_cache import get_cache, set_cache  # added import
 
@@ -20,34 +19,27 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
 
         if not decoded_auth_token.get("access_token"):
             logger.error("Missing access token in authenticated request")
-            return Response(
-                content=json.dumps(
-                    {"error": "Missing access token", "code": "TOKEN_MISSING"}
-                ),
+            raise HTTPException(
                 status_code=401,
-                media_type="application/json",
+                detail={"error": "Missing access token", "code": "TOKEN_MISSING"},
             )
 
         if not logged_in_user.get("id"):
-            # If the user ID is not present, return an error
             logger.error("Missing user ID in authenticated request")
-            return Response(
-                content=json.dumps(
-                    {"error": "Missing user ID", "code": "USER_ID_MISSING"}
-                ),
+            raise HTTPException(
                 status_code=401,
-                media_type="application/json",
+                detail={"error": "Missing user ID", "code": "USER_ID_MISSING"},
             )
 
         # Check if the data is already cached
         cache_key = f"twitch:following:{logged_in_user.get('id')}"
         cached_data = await get_cache(cache_key)
+
+        # Deserialize cached response into FollowedStreamer models
         if cached_data:
-            return Response(
-                content=json.dumps({"data": cached_data}),
-                status_code=200,
-                media_type="application/json",
-            )
+            return {
+                "data": [FollowedStreamer.model_validate(item) for item in cached_data]
+            }
 
         access_token = decoded_auth_token.get("access_token")
         user_id = logged_in_user.get("id")
@@ -55,39 +47,22 @@ async def get_following(auth_data: tuple = Depends(require_twitch_auth)):
             access_token=access_token, user_id=user_id
         )
 
-        # If the service returns a dict with an error, propagate it
-        if isinstance(following_data, dict) and "error" in following_data:
-            logger.error("Twitch API error: %s", following_data)
-            return Response(
-                content=json.dumps(
-                    {
-                        "error": following_data.get("error", "Twitch API error"),
-                        "details": following_data.get("message", ""),
-                        "code": following_data.get("status", 400),
-                    }
-                ),
-                status_code=following_data.get("status", 400),
-                media_type="application/json",
-            )
+        # Cache the serializable data for 60 seconds
+        await set_cache(
+            cache_key, [streamer.model_dump() for streamer in following_data], 60
+        )
 
-        # If the service returns a list (expected), wrap in a data key
-        if isinstance(following_data, list):
-            await set_cache(cache_key, following_data, 60)  # cache result
-            return JSONResponse(
-                content={"data": [user.model_dump() for user in following_data]},
-                status_code=200,
-            )
+        return {"data": following_data}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception("Unhandled exception in get_following")
-        return Response(
-            content=json.dumps(
-                {
-                    "error": "Failed to get following data",
-                    "details": str(e),
-                    "code": "INTERNAL_ERROR",
-                }
-            ),
+        raise HTTPException(
             status_code=500,
-            media_type="application/json",
+            detail={
+                "error": "Failed to get following data",
+                "details": str(e),
+                "code": "INTERNAL_ERROR",
+            },
         )
