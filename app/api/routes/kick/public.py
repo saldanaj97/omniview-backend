@@ -20,11 +20,12 @@ async def top_streams(request: Request):
     Endpoint to get top streams from Kick.
     """
     try:
-        try:
-            credentials = ensure_session_credentials(
-                request, "kick_public_credentials", "Kick"
-            )
-        except HTTPException:
+        # Check if we have the necessary credentials
+        credentials = ensure_session_credentials(
+            request, "kick_public_credentials", "Kick"
+        )
+
+        if not credentials:
             # Generate public token if not present
             try:
                 credentials = await kick_public_token(request)
