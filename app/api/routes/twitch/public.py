@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.api.routes.twitch.auth import twitch_public_token
 from app.schemas.top_streams import Stream
 from app.services.twitch import public
 from app.utils.http_utils import ensure_session_credentials
@@ -16,10 +17,20 @@ router = APIRouter()
 @router.get("/top_streams")
 async def top_streams(request: Request):
     try:
-        # Ensure Twitch public credentials exist in the session
-        credentials = ensure_session_credentials(
-            request, "twitch_public_credentials", "Twitch"
-        )
+        try:
+            credentials = ensure_session_credentials(
+                request, "twitch_public_credentials", "Twitch"
+            )
+        except HTTPException:
+            # Generate public token if not present
+            try:
+                credentials = await twitch_public_token(request)
+                request.session["twitch_public_credentials"] = credentials
+            except Exception as e:
+                logger.error("Failed to generate Twitch public token: %s", str(e))
+                raise HTTPException(
+                    status_code=500, detail="Failed to generate Twitch public token"
+                ) from e
 
         # Cache key for this endpoint
         cache_key = "twitch:public:top_streams"

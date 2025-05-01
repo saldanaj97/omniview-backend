@@ -2,6 +2,7 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.api.routes.kick.auth import kick_public_token
 from app.schemas.top_streams import Stream
 from app.services.kick.public import fetch_top_streams  # <-- added import
 from app.utils.http_utils import ensure_session_credentials
@@ -19,10 +20,20 @@ async def top_streams(request: Request):
     Endpoint to get top streams from Kick.
     """
     try:
-        # Check if we have the necessary credentials
-        credentials = ensure_session_credentials(
-            request, "kick_public_credentials", "Kick"
-        )
+        try:
+            credentials = ensure_session_credentials(
+                request, "kick_public_credentials", "Kick"
+            )
+        except HTTPException:
+            # Generate public token if not present
+            try:
+                credentials = await kick_public_token(request)
+                request.session["kick_public_credentials"] = credentials
+            except Exception as e:
+                logger.error("Failed to generate Kick public token: %s", str(e))
+                raise HTTPException(
+                    status_code=500, detail="Failed to generate Kick public token"
+                ) from e
 
         # Cache key for this endpoint
         cache_key = "kick:public:top_streams"
