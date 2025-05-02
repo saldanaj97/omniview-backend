@@ -44,7 +44,7 @@ except Exception as e:
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["http://localhost:3000", "https://omniview-backend.onrender.com"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -54,8 +54,8 @@ app.add_middleware(
 app.add_middleware(
     SessionMiddleware,
     secret_key=SECRET_KEY,
-    https_only=False,  # Set to True in production with HTTPS
-    same_site="lax",
+    https_only=True,  # Set to True in production with HTTPS
+    same_site="none",  # Set to "lax" or "strict" in production
 )
 
 
