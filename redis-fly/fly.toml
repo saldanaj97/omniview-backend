@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for omniview-api-redis-cache on 2025-05-02T15:20:26-05:00
+# fly.toml app configuration file generated for omniview-redis on 2025-05-02T15:55:52-05:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -7,28 +7,23 @@ app = 'omniview-redis'
 primary_region = 'dfw'
 
 [build]
-  image = "redis:7"
+  image = 'redis:7'
 
-[env]
+[[mounts]]
+  source = 'redis_data'
+  destination = '/data'
 
-[mounts]
-  source = "redis_data"
-  destination = "/data"
-
-[services.redis]
-  protocol = "tcp"
+[[services]]
+  protocol = 'tcp'
   internal_port = 6379
+  ports = [6379]
 
-  [[services.redis.ports]]
-    port = 6379
-    handlers = ["tcp"]
+  [[services.tcp_checks]]
+    interval = '10s'
+    timeout = '2s'
+    grace_period = '30s'
 
-  [services.redis.concurrency]
-    type = "connections"
-    hard_limit = 100
-    soft_limit = 50
-
-[services.tcp_checks]
-  interval = "10s"
-  timeout = "2s"
-  grace_period = "30s"
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
