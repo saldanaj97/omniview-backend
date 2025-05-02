@@ -26,7 +26,6 @@ async def top_streams(request: Request):
         )
 
         if not credentials:
-            # Generate public token if not present
             try:
                 credentials = await kick_public_token(request)
                 request.session["kick_public_credentials"] = credentials
