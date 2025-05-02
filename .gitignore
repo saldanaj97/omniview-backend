@@ -12,3 +12,6 @@ ENV/
 
 # Redis dump file
 dump.rdb
+
+# Redis conf
+redis-fly/redis.conf
