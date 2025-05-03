@@ -24,7 +24,7 @@ services:
     volumes:
       - redis_data:/data
     profiles:
-      - prod
+      - dev  # Changed from prod to dev since we're using Upstash in production
 
 volumes:
   redis_data:
