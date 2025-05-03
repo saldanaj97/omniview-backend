@@ -1,5 +1,5 @@
 # Dockerfile for FastAPI backend (Production)
-FROM python:alpine
+FROM python:3.11-slim
 
 WORKDIR /app
 

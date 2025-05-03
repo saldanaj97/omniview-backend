@@ -1,36 +1,30 @@
 services:
   api:
     build: .
-    container_name: fastapi-app
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
     env_file:
-      - .env
-    environment:
-      REDIS_URL: redis://redis:6379/0
+      - .env.production
     ports:
-      - "8000:8000"
-    restart: unless-stopped
-    depends_on:
-      - redis
-    healthcheck:
-      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8000/health || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - "80:8000"
+    environment:
+      REDIS_URL: ${REDIS_URL}
+    profiles:
+      - prod
 
   redis:
-    image: redis:7
-    container_name: redis
-    ports:
-      - "6379:6379"
-    command: redis-server --save 60 1 --loglevel warning
-    volumes:
-      - redis-data:/data
-    restart: unless-stopped
+    image: redis:latest
+    command: redis-server --save 60 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
+    env_file:
+      - .env.production
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: bash -c "redis-cli -a $REDIS_PASSWORD ping"
       interval: 30s
       timeout: 10s
       retries: 3
+    volumes:
+      - redis_data:/data
+    profiles:
+      - prod
 
 volumes:
-  redis-data: {}
+  redis_data:
