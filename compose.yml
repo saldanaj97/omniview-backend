@@ -4,27 +4,20 @@ services:
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
     env_file:
       - .env.production
-    ports:
-      - "80:8000"
-    environment:
-      REDIS_URL: ${REDIS_URL}
     profiles:
       - prod
 
   redis:
-    image: redis:latest
+    image: redis:alpine
     command: redis-server --save 60 1 --loglevel warning --requirepass ${REDIS_PASSWORD}
     env_file:
       - .env.production
-    healthcheck:
-      test: bash -c "redis-cli -a $REDIS_PASSWORD ping"
-      interval: 30s
-      timeout: 10s
-      retries: 3
+    profiles:
+      - prod
+    ports:
+      - "6379:6379"
     volumes:
       - redis_data:/data
-    profiles:
-      - dev  # Changed from prod to dev since we're using Upstash in production
 
 volumes:
   redis_data:
