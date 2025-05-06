@@ -94,5 +94,5 @@ def standardize_data(user_data: dict) -> FollowedStreamer:
         tag_ids=user_data.get("tag_ids", []),
         tags=user_data.get("tags", []),
         is_mature=user_data.get("is_mature", False),
-        platform="Twitch",
+        platform="twitch",
     )

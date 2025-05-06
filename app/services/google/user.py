@@ -268,7 +268,7 @@ def standardize_data(subscription) -> FollowedStreamer:
         user_login=snippet.get("customUrl", ""),
         user_name=snippet.get("title", ""),
         game_id="",
-        game_name="",
+        game_name="Youtube Content",
         title=ls.get("title", snippet.get("title", "")),
         viewer_count=ls.get("viewer_count", 0),
         started_at=ls.get("actualStartTime", ls.get("scheduledStartTime", "")),
@@ -279,5 +279,5 @@ def standardize_data(subscription) -> FollowedStreamer:
         is_mature=False,
         livechat_id=ls.get("live_chat_id", None),
         video_id=ls.get("vid", None),
-        platform="YouTube",
+        platform="youtube",
     )
