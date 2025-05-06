@@ -59,4 +59,4 @@ class FollowedStreamer(BaseModel):
     is_mature: bool
     livechat_id: str | None = None
     video_id: str | None = None
-    platform: Literal["Twitch", "YouTube"]
+    platform: Literal["twitch", "youtube"]
