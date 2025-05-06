@@ -31,7 +31,7 @@ def stream_data_to_unified_format(
         id=stream_data["id"],
         login=stream_data.get("login", stream_data.get("user_login", "")),
         display_name=stream_data["display_name"],
-        type=stream_data.get("type", ""),
+        type=stream_data.get("type", "live"),
         broadcaster_type=stream_data.get("broadcaster_type", ""),
         description=stream_data.get("description", ""),
         profile_image_url=stream_data.get("profile_image_url", ""),

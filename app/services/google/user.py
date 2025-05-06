@@ -257,7 +257,7 @@ def standardize_data(subscription) -> FollowedStreamer:
         id=snippet.get("resourceId", {}).get("channelId", ""),
         login=snippet.get("customUrl", ""),
         display_name=snippet.get("title", ""),
-        type="",
+        type="live",
         broadcaster_type="",
         description=snippet.get("description", ""),
         profile_image_url=default_thumb,
