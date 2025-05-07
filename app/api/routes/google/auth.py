@@ -52,7 +52,7 @@ async def oauth2callback(request: Request):
     flow = google_auth_oauthlib.flow.Flow.from_client_config(
         GOOGLE_CLIENT_SECRET, scopes=GOOGLE_SCOPES, state=state
     )
-    flow.redirect_uri = str(request.url_for("oauth2callback"))
+    flow.redirect_uri = GOOGLE_FLOW_REDIRECT_URI
 
     # Get the authorization response URL
     authorization_response = str(request.url)
