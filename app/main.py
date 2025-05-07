@@ -47,7 +47,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://omniview-backend.onrender.com",
+        "https://omniview-frontend-production.up.railway.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -59,7 +59,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SECRET_KEY,
     https_only=True,  # Set to True in production with HTTPS
-    same_site="none",  # Set to "lax" or "strict" in production
+    same_site="strict",  # Set to "lax" or "strict" in production
 )
 
 
