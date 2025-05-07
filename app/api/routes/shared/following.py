@@ -6,7 +6,7 @@ from fastapi import APIRouter, Request
 
 from app.schemas.followed_streamer import FollowedStreamer
 from app.services.shared.following import (
-    _fetch_and_cache_streams,
+    fetch_and_cache_streams,
     get_twitch_streams,
     get_user_id_from_session,
     get_youtube_streams,
@@ -43,7 +43,7 @@ async def get_followed_streams(request: Request) -> List[FollowedStreamer]:
     )
 
     twitch_streams, youtube_streams = await asyncio.gather(
-        _fetch_and_cache_streams(
+        fetch_and_cache_streams(
             has_session=has_twitch_session,
             cached_data=twitch_cached_data,
             user_id=twitch_user_id,
@@ -53,7 +53,7 @@ async def get_followed_streams(request: Request) -> List[FollowedStreamer]:
             logger_prefix="Twitch",
             request=request,
         ),
-        _fetch_and_cache_streams(
+        fetch_and_cache_streams(
             has_session=has_youtube_session,
             cached_data=youtube_cached_data,
             user_id=youtube_user_id,

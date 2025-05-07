@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from app.schemas.top_streams import Stream
 from app.services.google.public import fetch_top_streams as youtube_fetch_top_streams
 from app.services.kick.public import fetch_top_streams as kick_fetch_top_streams
-from app.services.twitch import public as twitch_public
+from app.services.twitch.public import fetch_top_streams as twitch_fetch_top_streams
 from app.utils.http_utils import ensure_session_credentials
 from app.utils.redis_cache import get_cache, set_cache
 
@@ -45,7 +45,7 @@ async def top_streams(request: Request):
             cached = await get_cache(twitch_cache_key)
             if isinstance(cached, dict) and "data" in cached:
                 return [Stream.model_validate(item) for item in cached["data"]]
-            response = await twitch_public.get_top_streams(twitch_credentials)
+            response = await twitch_fetch_top_streams(twitch_credentials)
             standardized = [
                 Stream.model_validate(item) for item in response.get("data", [])
             ]

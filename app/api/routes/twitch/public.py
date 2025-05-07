@@ -28,7 +28,7 @@ async def top_streams(request: Request):
                 "data": [Stream.model_validate(item) for item in cached_data["data"]]
             }
 
-        response = await public.get_top_streams(credentials)
+        response = await public.fetch_top_streams(credentials)
         standardized = [
             Stream.model_validate(item) for item in response.get("data", [])
         ]
