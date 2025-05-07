@@ -6,7 +6,12 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from google.auth.transport.requests import Request as GoogleAuthRequest
 
-from app.core.config import FRONTEND_URL, GOOGLE_CLIENT_SECRET, GOOGLE_SCOPES, GOOGLE_FLOW_REDIRECT_URI
+from app.core.config import (
+    FRONTEND_URL,
+    GOOGLE_CLIENT_SECRET,
+    GOOGLE_SCOPES,
+    GOOGLE_FLOW_REDIRECT_URI,
+)
 from app.services.google.auth import credentials_to_dict
 
 router = APIRouter()
@@ -54,8 +59,13 @@ async def oauth2callback(request: Request):
     )
     flow.redirect_uri = GOOGLE_FLOW_REDIRECT_URI
 
+    # Fix: Force HTTPS for Railway deployment
+    url = str(request.url)
+    if url.startswith("http:"):
+        url = "https:" + url[5:]
+
     # Get the authorization response URL
-    authorization_response = str(request.url)
+    authorization_response = str(url)
     flow.fetch_token(authorization_response=authorization_response)
 
     # Store credentials in session
