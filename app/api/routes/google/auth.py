@@ -9,8 +9,8 @@ from google.auth.transport.requests import Request as GoogleAuthRequest
 from app.core.config import (
     FRONTEND_URL,
     GOOGLE_CLIENT_SECRET,
-    GOOGLE_SCOPES,
     GOOGLE_FLOW_REDIRECT_URI,
+    GOOGLE_SCOPES,
 )
 from app.services.google.auth import credentials_to_dict
 
@@ -75,7 +75,18 @@ async def oauth2callback(request: Request):
 
     # Store the credentials in the session
     if "session" in request.scope:
+        # Preserve existing Twitch credentials if present
+        twitch_credentials = request.session.get("twitch_credentials")
+        twitch_user_profile = request.session.get("twitch_user_profile")
+
+        # Update Google credentials
         request.session["google_credentials"] = credentials_to_dict(credentials)
+
+        # Restore Twitch credentials if they existed
+        if twitch_credentials:
+            request.session["twitch_credentials"] = twitch_credentials
+        if twitch_user_profile:
+            request.session["twitch_user_profile"] = twitch_user_profile
 
     return RedirectResponse(url=f"{FRONTEND_URL}/auth/success", status_code=302)
 
@@ -95,6 +106,10 @@ async def refresh_token(request: Request):
         )
 
     try:
+        # Save existing Twitch credentials if present
+        twitch_credentials = request.session.get("twitch_credentials")
+        twitch_user_profile = request.session.get("twitch_user_profile")
+
         google_credentials = request.session["google_credentials"]
 
         # Check if the credential dictionary has minimum required fields
@@ -125,6 +140,12 @@ async def refresh_token(request: Request):
 
             # Update the session with the refreshed credentials
             request.session["google_credentials"] = credentials_to_dict(credentials)
+
+            # Restore Twitch credentials if they existed
+            if twitch_credentials:
+                request.session["twitch_credentials"] = twitch_credentials
+            if twitch_user_profile:
+                request.session["twitch_user_profile"] = twitch_user_profile
 
             return {
                 "message": "Token refreshed successfully",
