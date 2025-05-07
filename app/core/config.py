@@ -30,7 +30,7 @@ TWITCH_SCOPES = "user:read:follows"
 
 # Google OAuth configuration
 GOOGLE_CLIENT_SECRET = json.loads(os.getenv("GOOGLE_CLIENT_SECRET_JSON", "{}"))
-GOOGLE_FLOW_REDIRECT_URI = os.getenv('GOOGLE_FLOW_REDIRECT_URI', 'http://localhost:8000/api/google/oauth/google/callback')
+GOOGLE_FLOW_REDIRECT_URI = os.getenv('GOOGLE_FLOW_REDIRECT_URI')
 
 # Google API scopes and config to request
 GOOGLE_SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"]
