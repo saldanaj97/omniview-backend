@@ -6,7 +6,8 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from google.auth.transport.requests import Request as GoogleAuthRequest
 
-from app.core.config import GOOGLE_CLIENT_SECRET, GOOGLE_SCOPES
+import app.core.config
+from app.core.config import FRONTEND_URL, GOOGLE_CLIENT_SECRET, GOOGLE_SCOPES
 from app.services.google.auth import credentials_to_dict
 
 router = APIRouter()
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("/authenticated")
 async def index(request: Request):
-    """Home page with authentication link"""
+    """Home page with an authentication link"""
     if request.session.get("google_credentials"):
         return request.session["google_credentials"]
 
@@ -67,7 +68,7 @@ async def oauth2callback(request: Request):
     if "session" in request.scope:
         request.session["google_credentials"] = credentials_to_dict(credentials)
 
-    return RedirectResponse(url="http://localhost:3000/auth/success", status_code=302)
+    return RedirectResponse(url=f"{FRONTEND_URL}/auth/success", status_code=302)
 
 
 @router.get("/oauth/refresh")
@@ -87,7 +88,7 @@ async def refresh_token(request: Request):
     try:
         google_credentials = request.session["google_credentials"]
 
-        # Check if credentials dictionary has minimum required fields
+        # Check if the credential dictionary has minimum required fields
         required_fields = ["token", "refresh_token", "client_id", "client_secret"]
         for field in required_fields:
             if field not in google_credentials:

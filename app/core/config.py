@@ -14,6 +14,9 @@ load_dotenv(ENV_FILE)
 # Development settings
 DEBUG = os.getenv("DEBUG", "False") == "True"
 
+# API URL
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+
 # Twitch OAuth configuration
 TWITCH_CLIENT_ID = os.getenv("TWITCH_CLIENT_ID")
 TWITCH_SECRET = os.getenv("TWITCH_SECRET")

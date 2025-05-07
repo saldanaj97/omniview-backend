@@ -3,9 +3,11 @@ import logging
 from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse, RedirectResponse
 
+import app.core.config
 from app.core.redis_client import get_token_data, set_token_data
 from app.core.security import generate_state_token
 from app.services.twitch import auth, user
+from app.core.config import FRONTEND_URL
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -97,11 +99,11 @@ async def twitch_callback(
     """
     # Handle error or cancelled authentication
     if error:
-        return RedirectResponse(url=f"http://localhost:3000?error={error}")
+        return RedirectResponse(url=f"{FRONTEND_URL}?error={error}")
 
     # Validate state
     if not state:
-        return RedirectResponse(url="http://localhost:3000?error=missing_state")
+        return RedirectResponse(url=f"{FRONTEND_URL}?error=missing_state")
 
     is_valid_state = state in VALID_STATES
 
@@ -110,7 +112,7 @@ async def twitch_callback(
         VALID_STATES.remove(state)
 
     if not is_valid_state:
-        return RedirectResponse(url="http://localhost:3000?error=invalid_state")
+        return RedirectResponse(url=f"{FRONTEND_URL}?error=invalid_state")
 
     try:
         # Exchange code for token
@@ -121,7 +123,7 @@ async def twitch_callback(
         user_profile = await user.get_user_profile(access_token)
         if not user_profile:
             return RedirectResponse(
-                url="http://localhost:3000?error=invalid_access_token"
+                url=f"{FRONTEND_URL}?error=invalid_access_token"
             )
 
         if "session" in request.scope:
@@ -129,11 +131,11 @@ async def twitch_callback(
             request.session["twitch_credentials"] = token_data
 
         return RedirectResponse(
-            url="http://localhost:3000/auth/success", status_code=302
+            url=f"{FRONTEND_URL}/auth/success", status_code=302
         )
 
     except Exception as e:
-        return RedirectResponse(url=f"http://localhost:3000?error={str(e)}")
+        return RedirectResponse(url=f"{FRONTEND_URL}?error={str(e)}")
 
 
 @router.get("/logout")
