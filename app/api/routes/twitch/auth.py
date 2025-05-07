@@ -1,9 +1,8 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Request, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import RedirectResponse
 
-import app.core.config
 from app.core.config import FRONTEND_URL
 from app.core.redis_client import get_token_data, set_token_data
 from app.core.security import generate_state_token
@@ -91,28 +90,13 @@ async def twitch_auth():
 
 
 @router.get("/callback")
-async def twitch_callback(
-    request: Request, code: str = "", state: str = "", error: str = ""
-):
+async def twitch_callback(request: Request, code: str = "", error: str = ""):
     """
     Handles the callback from Twitch OAuth authentication flow.
     """
     # Handle error or cancelled authentication
     if error:
         return RedirectResponse(url=f"{FRONTEND_URL}?error={error}")
-
-    # Validate state
-    if not state:
-        return RedirectResponse(url=f"{FRONTEND_URL}?error=missing_state")
-
-    is_valid_state = state in VALID_STATES
-
-    # Remove the state from valid states (one-time use)
-    if state in VALID_STATES:
-        VALID_STATES.remove(state)
-
-    if not is_valid_state:
-        return RedirectResponse(url=f"{FRONTEND_URL}?error=invalid_state")
 
     try:
         # Exchange code for token
@@ -125,16 +109,8 @@ async def twitch_callback(
             return RedirectResponse(url=f"{FRONTEND_URL}?error=invalid_access_token")
 
         if "session" in request.scope:
-            # Preserve existing Google credentials if present
-            google_credentials = request.session.get("google_credentials")
-
-            # Update Twitch credentials
             request.session["twitch_user_profile"] = user_profile
             request.session["twitch_credentials"] = token_data
-
-            # Restore Google credentials if they existed
-            if google_credentials:
-                request.session["google_credentials"] = google_credentials
 
         return RedirectResponse(url=f"{FRONTEND_URL}/auth/success", status_code=302)
 
@@ -186,9 +162,6 @@ async def refresh_token(request: Request):
         )
 
     try:
-        # Save existing YouTube credentials if present
-        google_credentials = request.session.get("google_credentials")
-
         # Get user ID from Twitch user profile
         twitch_user_profile = request.session.get("twitch_user_profile", {})
         if not twitch_user_profile:
@@ -240,10 +213,6 @@ async def refresh_token(request: Request):
             expires_in = new_token_data.get("expires_in", 3600)
             await set_token_data(user_id, "twitch", new_token_data, expires_in)
             request.session["twitch_credentials"] = new_token_data
-
-            # Restore YouTube credentials if they existed
-            if google_credentials:
-                request.session["google_credentials"] = google_credentials
 
             return {
                 "message": "Token refreshed successfully",
