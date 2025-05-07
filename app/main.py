@@ -6,10 +6,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 
 from app.api.routes import debug
-from app.api.routes.google import auth as google_auth, public as google_public, user as google_subscriptions
-from app.api.routes.kick import auth as kick_auth, public as kick_public
+from app.api.routes.google import auth as google_auth
+from app.api.routes.google import public as google_public
+from app.api.routes.google import user as google_subscriptions
+from app.api.routes.kick import auth as kick_auth
+from app.api.routes.kick import public as kick_public
 from app.api.routes.shared import following, public_auth, top_streams
-from app.api.routes.twitch import auth as twitch_auth, public as twitch_public, user as twitch_users
+from app.api.routes.twitch import auth as twitch_auth
+from app.api.routes.twitch import public as twitch_public
+from app.api.routes.twitch import user as twitch_users
 from app.core.config import SECRET_KEY
 from app.core.redis_client import redis_client
 from app.utils.logging import configure_logging
@@ -54,7 +59,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SECRET_KEY,
     https_only=True,  # Set to True in production with HTTPS
-    same_site="strict",  # Set to "lax" or "strict" in production
+    same_site="lax",  # Set to "lax" or "strict" in production
 )
 
 
@@ -104,6 +109,4 @@ if __name__ == "__main__":
         port=8000,
         reload=True,
         workers=2,
-        proxy_headers=True,
-        forwarded_allow_ips="*"
     )
