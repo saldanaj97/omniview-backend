@@ -6,8 +6,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from google.auth.transport.requests import Request as GoogleAuthRequest
 
-import app.core.config
-from app.core.config import FRONTEND_URL, GOOGLE_CLIENT_SECRET, GOOGLE_SCOPES
+from app.core.config import FRONTEND_URL, GOOGLE_CLIENT_SECRET, GOOGLE_SCOPES, GOOGLE_FLOW_REDIRECT_URI
 from app.services.google.auth import credentials_to_dict
 
 router = APIRouter()
@@ -33,7 +32,7 @@ async def authorize(request: Request):
         GOOGLE_CLIENT_SECRET, scopes=GOOGLE_SCOPES
     )
 
-    flow.redirect_uri = str(request.url_for("oauth2callback"))
+    flow.redirect_uri = GOOGLE_FLOW_REDIRECT_URI
 
     authorization_url, state = flow.authorization_url(
         access_type="offline", include_granted_scopes="true", prompt="consent"
