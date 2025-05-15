@@ -86,6 +86,6 @@ async def search_all_platforms(request: Request, username: str) -> dict:
         wrap(search_youtube, youtube_key, username),
     )
 
-    data = {"kick": results[0], "twitch": results[1], "youtube": results[2]}
+    data = {"twitch": results[1], "youtube": results[2], "kick": results[0]}
     await redis_cache.set_cache(cache_key, data, expiration=300)
     return data
