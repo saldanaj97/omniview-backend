@@ -11,7 +11,7 @@ from app.api.routes.google import public as google_public
 from app.api.routes.google import user as google_subscriptions
 from app.api.routes.kick import auth as kick_auth
 from app.api.routes.kick import public as kick_public
-from app.api.routes.shared import following, public_auth, top_streams
+from app.api.routes.shared import following, public_auth, search, top_streams
 from app.api.routes.twitch import auth as twitch_auth
 from app.api.routes.twitch import public as twitch_public
 from app.api.routes.twitch import user as twitch_users
@@ -84,6 +84,7 @@ if debug_mode:
 app.include_router(public_auth.router, prefix="/api/auth", tags=["authentication"])
 app.include_router(following.router, prefix="/api", tags=["shared"])
 app.include_router(top_streams.router, prefix="/api", tags=["shared"])
+app.include_router(search.router, prefix="/api", tags=["shared"])
 
 # Twitch API routes
 app.include_router(twitch_auth.router, prefix="/api/twitch", tags=["authentication"])
