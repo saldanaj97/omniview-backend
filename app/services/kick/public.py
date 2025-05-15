@@ -51,11 +51,12 @@ async def fetch_profile_pictures(
         return {}
 
     params = [("id", uid) for uid in user_ids]
-    response = await client.get(
-        "https://api.kick.com/public/v1/users",
-        headers={"Authorization": f"Bearer {access_token}", "Accept": "*/*"},
-        params=params,
-    )
+    async with httpx.AsyncClient() as new_client:
+        response = await new_client.get(
+            "https://api.kick.com/public/v1/users",
+            headers={"Authorization": f"Bearer {access_token}", "Accept": "*/*"},
+            params=params,
+        )
     check_kick_response_status(
         response, context="Failed to retrieve Kick user profiles"
     )
