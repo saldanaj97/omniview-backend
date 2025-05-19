@@ -5,7 +5,9 @@ import httpx
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 
+import app.core.config
 from app.core.config import (
+    FRONTEND_URL,
     KICK_CLIENT_ID,
     KICK_CLIENT_SECRET,
     KICK_ENDPOINTS,
@@ -107,7 +109,7 @@ async def kick_oauth_callback(request: Request, code: str, state: str):
             request.session["kick_credentials"] = credentials
 
         return RedirectResponse(
-            url="http://localhost:3000/auth/success", status_code=302
+            url=f"{FRONTEND_URL}/auth/success", status_code=302
         )
 
     except Exception as e:

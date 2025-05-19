@@ -57,7 +57,7 @@ def standardize_twitch_stream_data(item: dict) -> dict:
     }
 
 
-async def get_top_streams(credentials) -> dict:
+async def fetch_top_streams(credentials) -> dict:
     """
     Get the list of top streams from Twitch
 

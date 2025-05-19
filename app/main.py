@@ -56,7 +56,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=SECRET_KEY,
     https_only=True,  # Set to True in production with HTTPS
-    same_site="none",
+    same_site="lax",  # Set to "lax" or "strict" in production
 )
 
 
@@ -106,4 +106,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=True,
+        workers=2,
     )

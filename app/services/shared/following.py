@@ -158,7 +158,7 @@ async def get_user_id_from_session(
     return ""
 
 
-def _fetch_and_cache_streams(
+def fetch_and_cache_streams(
     *,
     has_session: bool,
     cached_data,

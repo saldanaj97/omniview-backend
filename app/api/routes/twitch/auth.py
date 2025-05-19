@@ -1,8 +1,9 @@
 import logging
 
-from fastapi import APIRouter, HTTPException, Request, Response
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import RedirectResponse
 
+from app.core.config import FRONTEND_URL
 from app.core.redis_client import get_token_data, set_token_data
 from app.core.security import generate_state_token
 from app.services.twitch import auth, user
@@ -89,28 +90,13 @@ async def twitch_auth():
 
 
 @router.get("/callback")
-async def twitch_callback(
-    request: Request, code: str = "", state: str = "", error: str = ""
-):
+async def twitch_callback(request: Request, code: str = "", error: str = ""):
     """
     Handles the callback from Twitch OAuth authentication flow.
     """
     # Handle error or cancelled authentication
     if error:
-        return RedirectResponse(url=f"http://localhost:3000?error={error}")
-
-    # Validate state
-    if not state:
-        return RedirectResponse(url="http://localhost:3000?error=missing_state")
-
-    is_valid_state = state in VALID_STATES
-
-    # Remove the state from valid states (one-time use)
-    if state in VALID_STATES:
-        VALID_STATES.remove(state)
-
-    if not is_valid_state:
-        return RedirectResponse(url="http://localhost:3000?error=invalid_state")
+        return RedirectResponse(url=f"{FRONTEND_URL}?error={error}")
 
     try:
         # Exchange code for token
@@ -120,20 +106,16 @@ async def twitch_callback(
         access_token = token_data.get("access_token")
         user_profile = await user.get_user_profile(access_token)
         if not user_profile:
-            return RedirectResponse(
-                url="http://localhost:3000?error=invalid_access_token"
-            )
+            return RedirectResponse(url=f"{FRONTEND_URL}?error=invalid_access_token")
 
         if "session" in request.scope:
             request.session["twitch_user_profile"] = user_profile
             request.session["twitch_credentials"] = token_data
 
-        return RedirectResponse(
-            url="http://localhost:3000/auth/success", status_code=302
-        )
+        return RedirectResponse(url=f"{FRONTEND_URL}/auth/success", status_code=302)
 
     except Exception as e:
-        return RedirectResponse(url=f"http://localhost:3000?error={str(e)}")
+        return RedirectResponse(url=f"{FRONTEND_URL}?error={str(e)}")
 
 
 @router.get("/logout")
