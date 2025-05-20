@@ -21,7 +21,7 @@ from app.utils.logging import configure_logging
 
 # Ensure SECRET_KEY is not None
 assert SECRET_KEY is not None, "SECRET_KEY must be defined"
-ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
+ORIGINS = os.getenv("CORS_ORIGINS", "").split(",")
 
 # Configure logging with our new system
 debug_mode = os.getenv("DEBUG", "False") == "True"
