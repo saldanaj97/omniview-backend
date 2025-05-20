@@ -21,6 +21,7 @@ from app.utils.logging import configure_logging
 
 # Ensure SECRET_KEY is not None
 assert SECRET_KEY is not None, "SECRET_KEY must be defined"
+ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 
 # Configure logging with our new system
 debug_mode = os.getenv("DEBUG", "False") == "True"
@@ -45,8 +46,7 @@ except Exception as e:
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https:\/\/(omniview-frontend-(stream-viewer-)?(pr-\d+\.)?up\.railway\.app|omniview-frontend-production\.up\.railway\.app)$",
-    allow_origins=["http://localhost:3000"],
+    allow_origins=ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
