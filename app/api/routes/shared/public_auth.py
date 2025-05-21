@@ -18,6 +18,8 @@ router = APIRouter()
 @router.get("/status", response_model=LoginStatusResponse)
 async def check_login_status(request: Request):
     """Check which platforms the user is logged into"""
+    # Kick login is not needed currently since there is no API support for features
+    # that require authentication. This is a placeholder for future use.
     try:
         platforms_status = [
             PlatformLoginStatus(
@@ -28,9 +30,7 @@ async def check_login_status(request: Request):
                 platform="Twitch",
                 loggedIn=bool(request.session.get("twitch_credentials")),
             ),
-            PlatformLoginStatus(
-                platform="Kick", loggedIn=bool(request.session.get("kick_credentials"))
-            ),
+            PlatformLoginStatus(platform="Kick", loggedIn=False),
         ]
 
         return LoginStatusResponse(data=platforms_status)
