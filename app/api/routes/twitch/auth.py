@@ -112,10 +112,14 @@ async def twitch_callback(request: Request, code: str = "", error: str = ""):
             request.session["twitch_user_profile"] = user_profile
             request.session["twitch_credentials"] = token_data
 
-        return RedirectResponse(url=f"{FRONTEND_URL}/auth/success", status_code=302)
+        return RedirectResponse(
+            url=f"{FRONTEND_URL}/auth/success?platform=twitch", status_code=302
+        )
 
     except Exception as e:
-        return RedirectResponse(url=f"{FRONTEND_URL}?error={str(e)}")
+        return RedirectResponse(
+            url=f"{FRONTEND_URL}/auth/error?platform=twitch&{str(e)}"
+        )
 
 
 @router.get("/logout")

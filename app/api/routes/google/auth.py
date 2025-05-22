@@ -64,20 +64,27 @@ async def oauth2callback(request: Request):
     if url.startswith("http:"):
         url = "https:" + url[5:]
 
-    # Get the authorization response URL
-    authorization_response = str(url)
-    flow.fetch_token(authorization_response=authorization_response)
+    try:
+        # Get the authorization response URL
+        authorization_response = str(url)
+        flow.fetch_token(authorization_response=authorization_response)
 
-    # Store credentials in session
-    credentials = flow.credentials
-    if not credentials:
-        raise HTTPException(status_code=400, detail="No credentials found")
+        # Store credentials in session
+        credentials = flow.credentials
+        if not credentials:
+            raise HTTPException(status_code=400, detail="No credentials found")
 
-    # Store the credentials in the session
-    if "session" in request.scope:
-        request.session["google_credentials"] = credentials_to_dict(credentials)
+        # Store the credentials in the session
+        if "session" in request.scope:
+            request.session["google_credentials"] = credentials_to_dict(credentials)
 
-    return RedirectResponse(url=f"{FRONTEND_URL}/auth/success", status_code=302)
+        return RedirectResponse(
+            url=f"{FRONTEND_URL}/auth/success?platform=youtube", status_code=302
+        )
+    except Exception as e:
+        return RedirectResponse(
+            url=f"{FRONTEND_URL}/auth/error?platform=youtube&{str(e)}"
+        )
 
 
 @router.get("/oauth/refresh")
