@@ -78,9 +78,13 @@ async def oauth2callback(request: Request):
         if "session" in request.scope:
             request.session["google_credentials"] = credentials_to_dict(credentials)
 
-        return RedirectResponse(url=f"{FRONTEND_URL}/auth/success", status_code=302)
+        return RedirectResponse(
+            url=f"{FRONTEND_URL}/auth/success?platform=youtube", status_code=302
+        )
     except Exception as e:
-        return RedirectResponse(url=f"{FRONTEND_URL}?error={str(e)}")
+        return RedirectResponse(
+            url=f"{FRONTEND_URL}/auth/error?platform=youtube&{str(e)}"
+        )
 
 
 @router.get("/oauth/refresh")
